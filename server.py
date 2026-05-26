@@ -8,6 +8,7 @@ from flask_mail import Mail, Message
 from flask_cors import CORS
 import sys
 import io
+import os
 
 # 设置标准输出编码为 UTF-8
 if sys.platform == 'win32':
@@ -16,13 +17,13 @@ if sys.platform == 'win32':
 app = Flask(__name__)
 CORS(app)
 
-# QQ 邮箱配置
-app.config['MAIL_SERVER'] = 'smtp.qq.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = '943411733@qq.com'
-app.config['MAIL_PASSWORD'] = 'hipziemwzrifbdjh'
-app.config['MAIL_DEFAULT_SENDER'] = '943411733@qq.com'
+# 从环境变量读取配置，如果不存在则使用默认值
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.qq.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', '465'))
+app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'True') == 'True'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '943411733@qq.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'hipziemwzrifbdjh')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', '943411733@qq.com')
 
 mail = Mail(app)
 
@@ -233,6 +234,7 @@ def save_order():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    print('邮件服务已启动！')
-    print('访问 http://localhost:5000 查看状态')
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    print(f'邮件服务已启动！')
+    print(f'访问 http://localhost:{port} 查看状态')
+    app.run(host='0.0.0.0', port=port)
