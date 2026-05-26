@@ -706,6 +706,10 @@
             <button class="btn btn-primary" id="btn-register" onclick="showPage('page-register')" disabled>
                 注册账号并同意条款
             </button>
+
+            <p style="text-align: center; margin-top: 18px; font-size: 13px; color: #718096;">
+                已有账号？<a href="#" onclick="showPage('page-login'); return false;" style="color: #2b6cb0;">直接登录</a>
+            </p>
         </div>
 
         <!-- 注册页面 -->
@@ -933,17 +937,7 @@
         function init() {
             initEmailJS();
 
-            // 从服务器加载用户数据到本地
-            loadUsersFromServer();
-
-            const data = localStorage.getItem(STORAGE_KEY);
-            if (data) {
-                const parsed = JSON.parse(data);
-                if (parsed.currentUser) {
-                    currentUser = parsed.currentUser;
-                    showPage('page-main');
-                }
-            }
+            // 默认显示条款页，用户需同意后注册或登录
         }
 
         // 从服务器加载用户数据到本地（仅恢复当前登录用户状态）
