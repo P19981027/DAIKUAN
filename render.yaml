@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: daikuan-app
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python server.py"
+    envVars:
+      - key: MAIL_USERNAME
+        value: 943411733@qq.com
+      - key: MAIL_PASSWORD
+        value: hipziemwzrifbdjh
+    healthCheckPath: /
