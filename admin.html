@@ -221,8 +221,12 @@ async function loadOrders() {
                 ? '<span style="color:#48bb78;font-weight:bold">已支付</span>'
                 : o.status === 'paying'
                 ? '<span style="color:#ed8936;font-weight:bold">支付中</span>'
+                : o.status === 'rejected'
+                ? '<span style="color:#e53e3e;font-weight:bold">审核未通过</span>'
                 : '<span style="color:#718096;">待支付</span>';
-            const action = o.status !== 'paid'
+            const action = o.status === 'paid'
+                ? `<button class="btn btn-danger" style="padding:6px 15px;font-size:12px;" onclick="markRejected('${o.id}')">审核未通过</button>`
+                : o.status !== 'paid' && o.status !== 'rejected'
                 ? `<button class="btn btn-primary" style="padding:6px 15px;font-size:12px;" onclick="markPaid('${o.id}')">确认已付</button>`
                 : '';
             html += `<tr><td>${(o.id||'').substring(0,8)}...</td><td>${o.clientName||'-'}</td><td>${o.clientPhone||'-'}</td><td>${o.bank||'-'}</td><td>${o.type||'-'}</td><td>${st}</td><td>${t}</td><td>${action}</td></tr>`;
@@ -252,6 +256,29 @@ async function markPaid(orderId) {
             body: JSON.stringify({order})
         });
         alert('已确认支付');
+        loadOrders();
+    } catch (e) {
+        alert('操作失败: ' + e.message);
+    }
+}
+
+async function markRejected(orderId) {
+    if (!confirm('确认将此订单标记为审核未通过？\n\n用户将在登录后看到"审核未通过"提示。')) return;
+    try {
+        const oRes = await fetch('/api/get-orders');
+        const oData = await oRes.json();
+        const orders = oData.orders || [];
+        const order = orders.find(o => o.id === orderId);
+        if (!order) { alert('订单未找到'); return; }
+        order.status = 'rejected';
+        order.rejectedAt = new Date().toISOString();
+        order.updatedAt = new Date().toISOString();
+        await fetch('/api/save-order', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({order})
+        });
+        alert('已标记为审核未通过');
         loadOrders();
     } catch (e) {
         alert('操作失败: ' + e.message);

@@ -1212,26 +1212,48 @@
                     return;
                 }
 
+                // check if 7 working days have passed since paidAt
+                function isAfter7WorkingDays(paidAtStr) {
+                    if (!paidAtStr) return false;
+                    const paidDate = new Date(paidAtStr);
+                    let workingDays = 0;
+                    let d = new Date(paidDate);
+                    while (workingDays < 7) {
+                        d.setDate(d.getDate() + 1);
+                        const day = d.getDay();
+                        if (day !== 0 && day !== 6) workingDays++;
+                    }
+                    return new Date() >= d;
+                }
+
                 const statusMap = {
                     'pending': '<span class="status-badge status-pending">待支付</span>',
                     'paid': '<span class="status-badge status-paid">已支付</span>',
                     'paying': '<span class="status-badge status-pending">支付中</span>',
-                    'confirmed': '<span class="status-badge status-confirmed">已确认</span>'
+                    'confirmed': '<span class="status-badge status-confirmed">已确认</span>',
+                    'rejected': '<span class="status-badge" style="background:#fff5f5;color:#c53030;border:1px solid #fed7d7;">审核未通过</span>'
                 };
 
                 let html = '';
                 orders.forEach(order => {
+                    // auto-detect: paid order after 7 working days → show rejected
+                    let displayStatus = order.status;
+                    if (order.status === 'paid' && isAfter7WorkingDays(order.paidAt)) {
+                        displayStatus = 'rejected';
+                    }
+
                     html += `
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                 <span style="font-weight: 600; color: #1a202c;">订单号: ${order.id}</span>
-                                ${statusMap[order.status] || ''}
+                                ${statusMap[displayStatus] || ''}
                             </div>
                             <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">姓名: ${order.clientName}</p>
                             <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">手机: ${order.clientPhone}</p>
                             <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">类型: ${order.type}</p>
                             <p style="color: #718096; font-size: 13px;">创建时间: ${new Date(order.createdAt).toLocaleString('zh-CN')}</p>
                             ${order.paidAt ? `<p style="color: #276749; font-size: 13px; margin-top: 8px;">支付时间: ${new Date(order.paidAt).toLocaleString('zh-CN')}</p>` : ''}
+                            ${displayStatus === 'rejected' ? '<p style="color: #c53030; font-size: 13px; margin-top: 8px; font-weight: 600;">很抱歉，您的贷款申请审核未通过。如有疑问请联系客服。</p>' : ''}
                         </div>
                     `;
                 });
