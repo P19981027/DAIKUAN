@@ -214,7 +214,7 @@ async function loadOrders() {
             c.innerHTML = '<p style="color:#718096;">暂无订单</p>';
             return;
         }
-        let html = '<table><thead><tr><th>订单ID</th><th>姓名</th><th>手机号</th><th>银行</th><th>类型</th><th>状态</th><th>创建时间</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>订单ID</th><th>姓名</th><th>手机号</th><th>银行</th><th>类型</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
         orders.forEach(o => {
             const t = o.createdAt ? new Date(o.createdAt).toLocaleString('zh-CN') : '未知';
             const st = o.status === 'paid'
@@ -222,13 +222,39 @@ async function loadOrders() {
                 : o.status === 'paying'
                 ? '<span style="color:#ed8936;font-weight:bold">支付中</span>'
                 : '<span style="color:#718096;">待支付</span>';
-            html += `<tr><td>${(o.id||'').substring(0,8)}...</td><td>${o.clientName||'-'}</td><td>${o.clientPhone||'-'}</td><td>${o.bank||'-'}</td><td>${o.type||'-'}</td><td>${st}</td><td>${t}</td></tr>`;
+            const action = o.status !== 'paid'
+                ? `<button class="btn btn-primary" style="padding:6px 15px;font-size:12px;" onclick="markPaid('${o.id}')">确认已付</button>`
+                : '';
+            html += `<tr><td>${(o.id||'').substring(0,8)}...</td><td>${o.clientName||'-'}</td><td>${o.clientPhone||'-'}</td><td>${o.bank||'-'}</td><td>${o.type||'-'}</td><td>${st}</td><td>${t}</td><td>${action}</td></tr>`;
         });
         html += '</tbody></table>';
         html += `<p style="margin-top:15px;color:#718096;">共 ${orders.length} 条订单</p>`;
         c.innerHTML = html;
     } catch (e) {
         c.innerHTML = '<p style="color:red;">加载失败: ' + e.message + '</p>';
+    }
+}
+
+async function markPaid(orderId) {
+    if (!confirm('确认将此订单标记为已支付？')) return;
+    try {
+        const oRes = await fetch('/api/get-orders');
+        const oData = await oRes.json();
+        const orders = oData.orders || [];
+        const order = orders.find(o => o.id === orderId);
+        if (!order) { alert('订单未找到'); return; }
+        order.status = 'paid';
+        order.paidAt = new Date().toISOString();
+        order.updatedAt = new Date().toISOString();
+        await fetch('/api/save-order', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({order})
+        });
+        alert('已确认支付');
+        loadOrders();
+    } catch (e) {
+        alert('操作失败: ' + e.message);
     }
 }
 
