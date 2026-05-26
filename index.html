@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>贷款信息咨询平台 - 专业服务</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 40px rgba(0,0,0,0.08);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .logo {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .header .tagline {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            letter-spacing: 1px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1a202c;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            color: #718096;
+            font-size: 24px;
+            line-height: 20px;
+        }
+
+        .page {
+            padding: 30px;
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(43, 108, 176, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(43, 108, 176, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #2b6cb0;
+            color: #2b6cb0;
+        }
+
+        .btn-outline:hover {
+            background: rgba(43, 108, 176, 0.05);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group label .required {
+            color: #e53e3e;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f7fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2b6cb0;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+        }
+
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            vertical-align: middle;
+            accent-color: #2b6cb0;
+        }
+
+        .checkbox-group label {
+            display: inline-flex;
+            align-items: flex-start;
+            font-weight: normal;
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .checkbox-group label span {
+            display: block;
+        }
+
+        .terms-section {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .terms-title {
+            background: #f7fafc;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #2d3748;
+            transition: background 0.3s;
+        }
+
+        .terms-title:hover {
+            background: #edf2f7;
+        }
+
+        .terms-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #fff;
+        }
+
+        .terms-content.open {
+            max-height: 2000px;
+        }
+
+        .terms-content-inner {
+            padding: 20px;
+            font-size: 13px;
+            color: #4a5568;
+            line-height: 1.8;
+            max-height: 2000px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .qr-section {
+            text-align: center;
+            padding: 40px 30px;
+            background: #f7fafc;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .qr-section img {
+            max-width: 220px;
+            margin: 20px 0;
+            border: 3px solid white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-radius: 8px;
+        }
+
+        .payment-info {
+            background: #ebf8ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #2b6cb0;
+        }
+
+        .payment-info h3 {
+            color: #2c5282;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .payment-info p {
+            color: #4a5568;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .payment-info .highlight {
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .data-info {
+            background: #fffaf0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #ed8936;
+        }
+
+        .data-info h3 {
+            color: #c05621;
+            font-size: 16px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .data-info p {
+            color: #744210;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #718096;
+            font-size: 12px;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            background: #f7fafc;
+            padding: 0 30px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 18px 10px;
+            text-align: center;
+            cursor: pointer;
+            color: #718096;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-tab.active {
+            color: #2b6cb0;
+            border-bottom-color: #2b6cb0;
+            background: white;
+            margin-bottom: -2px;
+        }
+
+        .nav-tab:hover:not(.active) {
+            color: #2d3748;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #276749;
+            border: 1px solid #c6f6d5;
+        }
+
+        .alert-error {
+            background: #fff5f5;
+            color: #c53030;
+            border: 1px solid #fed7d7;
+        }
+
+        .alert-warning {
+            background: #fffaf0;
+            color: #c05621;
+            border: 1px solid #fbd38d;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            color: #2c5282;
+            border: 1px solid #bee3f8;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+            margin-right: 12px;
+            border-radius: 2px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #2b6cb0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fffaf0;
+            color: #c05621;
+            border: 1px solid #fbd38d;
+        }
+
+        .status-paid {
+            background: #f0fff4;
+            color: #276749;
+            border: 1px solid #c6f6d5;
+        }
+
+        .status-confirmed {
+            background: #ebf8ff;
+            color: #2c5282;
+            border: 1px solid #bee3f8;
+        }
+
+        .checkbox-agree {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+        }
+
+        .checkbox-agree input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            margin-top: 2px;
+            accent-color: #2b6cb0;
+        }
+
+        .checkbox-agree label {
+            font-weight: 500;
+            color: #1a202c;
+            font-size: 14px;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 15px;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+
+        .user-table th {
+            background: #f7fafc;
+            font-weight: 600;
+        }
+
+        .user-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .user-table tr:hover {
+            background: #f1f5f9;
+        }
+
+        .sending-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .sending-item {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: white;
+        }
+
+        .sending-item p {
+            margin: 5px 0;
+            color: #4a5568;
+            font-size: 13px;
+        }
+
+        .sending-item .status {
+            font-weight: 600;
+        }
+
+        .sending-item .status-success {
+            color: #276749;
+        }
+
+        .sending-item .status-error {
+            color: #c53030;
+        }
+
+        .sending-item .status-pending {
+            color: #c05621;
+        }
+
+        .user-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            background: white;
+        }
+
+        .user-card h4 {
+            color: #1a202c;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .user-card p {
+            color: #4a5568;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="logo">信贷咨询服务</div>
+                <div class="tagline">专业 · 透明 · 高效</div>
+            </div>
+        </div>
+
+        <!-- 法律条款页面 -->
+        <div class="page active" id="page-terms">
+            <h2 class="section-title">服务条款</h2>
+            <p style="color: #4a5568; margin-bottom: 25px; font-size: 14px;">请仔细阅读以下条款，阅读完毕后请勾选同意。</p>
+
+            <div class="terms-section">
+                <div class="terms-title" onclick="toggleTerms('terms-1')">一、个人信息收集告知书 ▼</div>
+                <div class="terms-content" id="terms-1">
+                    <div class="terms-content-inner">
+                        <strong>1. 收集的信息</strong><br>
+                        本平台在您注册、咨询贷款业务时，可能会收集您的以下个人信息：<br>
+                        • 身份证号码<br>
+                        • 姓名<br>
+                        • 手机号码<br>
+                        • 银行卡信息<br>
+                        • 其他与贷款申请相关的信息<br><br>
+                        <strong>2. 收集目的</strong><br>
+                        为向您提供贷款信息咨询和协助申请服务，我们将使用您提供的个人信息。在贷款申请过程中，我们可能需要将这些信息提供给合作金融机构。<br><br>
+                        <strong>3. 信息使用</strong><br>
+                        您的信息将仅用于本次贷款申请咨询及后续服务，我们不会向任何第三方出售或转让您的个人信息，除非获得您的明确同意。<br><br>
+                        <strong>4. 信息安全</strong><br>
+                        我们采取合理的技术措施保护您的个人信息安全，但无法完全保证网络环境的绝对安全。
+                    </div>
+                </div>
+            </div>
+
+            <div class="terms-section">
+                <div class="terms-title" onclick="toggleTerms('terms-2')">二、服务条款 ▼</div>
+                <div class="terms-content" id="terms-2">
+                    <div class="terms-content-inner">
+                        <strong>1. 服务性质</strong><br>
+                        本平台仅提供贷款信息咨询和协助申请服务，不直接提供贷款资金。最终贷款审批结果以合作金融机构的审核为准。<br><br>
+                        <strong>2. 费用说明</strong><br>
+                        本次服务收取材料费30元/次。该费用为一次性费用，不包含后续任何费用。<br><br>
+                        <strong>3. 不退款条款</strong><br>
+                        材料费为一次性服务费用，无论最终贷款是否成功，均不退还。请您在缴费前充分理解并确认。<br><br>
+                        <strong>4. 服务内容</strong><br>
+                        • 协助准备申请材料<br>
+                        • 提供贷款产品信息<br>
+                        • 指导填写申请表格<br>
+                        • 跟进申请进度<br>
+                        不包含以下内容：<br>
+                        • 保证贷款通过<br>
+                        • 承诺贷款金额<br>
+                        • 负责最终审批结果
+                    </div>
+                </div>
+            </div>
+
+            <div class="terms-section">
+                <div class="terms-title" onclick="toggleTerms('terms-3')">三、免责声明 ▼</div>
+                <div class="terms-content" id="terms-3">
+                    <div class="terms-content-inner">
+                        <strong>1. 不保证结果</strong><br>
+                        本平台不对贷款申请的通过率做出任何保证。贷款审批完全由合作金融机构根据其自身标准独立判断，我们无法影响审批结果。<br><br>
+                        <strong>2. 客户责任</strong><br>
+                        贷款申请的最终结果取决于您提供的材料的真实性、完整性以及是否符合合作金融机构的审批要求。如因材料不实、信息不完整等原因导致申请失败，责任由您自行承担。<br><br>
+                        <strong>3. 信息准确性</strong><br>
+                        本平台所提供的贷款产品信息来源于合作金融机构官方资料，但可能存在更新不及时的情况。您应以合作金融机构的官方信息为准。<br><br>
+                        <strong>4. 不可抗力</strong><br>
+                        如因银行系统升级、政策调整、不可抗力等原因导致服务无法正常进行，本平台不承担责任。
+                    </div>
+                </div>
+            </div>
+
+            <div class="terms-section">
+                <div class="terms-title" onclick="toggleTerms('terms-4')">四、退款政策 ▼</div>
+                <div class="terms-content" id="terms-4">
+                    <div class="terms-content-inner">
+                        <strong>1. 收费标准</strong><br>
+                        本服务收取材料费30元/次，此费用为一次性费用，无论贷款申请结果如何，均不退还。<br><br>
+                        <strong>2. 适用情形</strong><br>
+                        材料费不退还的情形包括但不限于：<br>
+                        • 贷款申请提交后，申请材料被退回且申请人未在要求时间内重新提交完整材料<br>
+                        • 申请人主动放弃申请<br>
+                        • 申请人提供虚假信息导致申请无法继续<br>
+                        • 申请人未在规定时间内完成缴费<br><br>
+                        <strong>3. 特殊情况</strong><br>
+                        如因本平台原因导致服务无法完成，将在10个工作日内全额退款。
+                    </div>
+                </div>
+            </div>
+
+            <div class="terms-section">
+                <div class="terms-title" onclick="toggleTerms('terms-5')">五、隐私政策 ▼</div>
+                <div class="terms-content" id="terms-5">
+                    <div class="terms-content-inner">
+                        <strong>1. 信息收集</strong><br>
+                        我们仅收集与贷款申请直接相关的必要信息，不会收集与本次服务无关的个人信息。<br><br>
+                        <strong>2. 信息使用范围</strong><br>
+                        您的信息仅用于本次贷款申请咨询及后续服务，不会用于其他商业用途。<br><br>
+                        <strong>3. 信息共享</strong><br>
+                        我们不会向任何第三方出售或转让您的个人信息。在贷款申请过程中，我们可能需要将您的信息提供给合作金融机构，仅用于贷款审批目的。<br><br>
+                        <strong>4. 信息存储</strong><br>
+                        您的信息存储在本地设备上，我们不会上传到云端服务器。建议您定期备份重要数据。<br><br>
+                        <strong>5. 信息删除</strong><br>
+                        您可以在任何时候要求删除您的个人信息，我们将协助您完成删除操作。
+                    </div>
+                </div>
+            </div>
+
+            <div class="terms-section">
+                <div class="terms-title" onclick="toggleTerms('terms-6')">六、争议解决 ▼</div>
+                <div class="terms-content" id="terms-6">
+                    <div class="terms-content-inner">
+                        <strong>1. 协商解决</strong><br>
+                        如对本平台的服务有疑问或争议，您可以通过本平台提供的联系方式与我们协商解决。<br><br>
+                        <strong>2. 争议处理</strong><br>
+                        如协商不成，双方同意通过友好协商解决；协商不成，可向本平台所在地人民法院提起诉讼。<br><br>
+                        <strong>3. 适用法律</strong><br>
+                        本条款适用中华人民共和国法律。如本条款任何部分被认定无效，不影响其他部分的效力。
+                    </div>
+                </div>
+            </div>
+
+            <div class="checkbox-agree">
+                <input type="checkbox" id="agree-terms" onchange="checkAgree()">
+                <label for="agree-terms">
+                    我已仔细阅读并理解上述所有条款，并同意接受本协议的约束
+                </label>
+            </div>
+
+            <button class="btn btn-primary" id="btn-register" onclick="showPage('page-register')" disabled>
+                注册账号并同意条款
+            </button>
+        </div>
+
+        <!-- 注册页面 -->
+        <div class="page" id="page-register">
+            <div class="back-btn" onclick="showPage('page-terms')">← 返回条款</div>
+            <h2 class="section-title">注册账号</h2>
+
+            <div class="form-group">
+                <label>手机号码</label>
+                <input type="tel" id="reg-phone" placeholder="请输入手机号码">
+            </div>
+
+            <div class="form-group">
+                <label>设置密码</label>
+                <input type="password" id="reg-password" placeholder="请设置密码（6-20位）">
+            </div>
+
+            <div class="form-group">
+                <label>确认密码</label>
+                <input type="password" id="reg-confirm" placeholder="请再次输入密码">
+            </div>
+
+            <button class="btn btn-primary" onclick="register()">注册</button>
+
+            <p style="text-align: center; margin-top: 18px; font-size: 13px; color: #718096;">
+                已有账号？<a href="#" onclick="showPage('page-login'); return false;" style="color: #2b6cb0;">直接登录</a>
+            </p>
+        </div>
+
+        <!-- 登录页面 -->
+        <div class="page" id="page-login">
+            <h2 class="section-title">登录账号</h2>
+
+            <div class="form-group">
+                <label>手机号码</label>
+                <input type="tel" id="login-phone" placeholder="请输入手机号码">
+            </div>
+
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="login-password" placeholder="请输入密码">
+            </div>
+
+            <button class="btn btn-primary" onclick="login()">登录</button>
+
+            <p style="text-align: center; margin-top: 18px; font-size: 13px; color: #718096;">
+                还没有账号？<a href="#" onclick="showPage('page-register'); return false;" style="color: #2b6cb0;">注册新账号</a>
+            </p>
+        </div>
+
+        <!-- 主页面 -->
+        <div class="page" id="page-main">
+            <h2 class="section-title">客户资料收集</h2>
+
+            <div class="data-info">
+                <h3>📋 费用说明</h3>
+                <p>材料费：<span class="highlight">30元</span>/次</p>
+                <p>此费用为一次性费用，无论贷款申请结果如何，均不退还。</p>
+            </div>
+
+            <form id="client-form" onsubmit="submitForm(event)">
+                <div class="form-group">
+                    <label>姓名 <span class="required">*</span></label>
+                    <input type="text" id="client-name" required placeholder="请输入真实姓名">
+                </div>
+
+                <div class="form-group">
+                    <label>手机号码 <span class="required">*</span></label>
+                    <input type="tel" id="client-phone" required placeholder="请输入手机号码">
+                </div>
+
+                <div class="form-group">
+                    <label>身份证号码 <span class="required">*</span></label>
+                    <input type="text" id="client-id" required placeholder="请输入身份证号码">
+                </div>
+
+                <div class="form-group">
+                    <label>银行卡号</label>
+                    <input type="text" id="client-bank" placeholder="请输入银行卡号（如需要）">
+                </div>
+
+                <div class="form-group">
+                    <label>贷款类型</label>
+                    <select id="client-type">
+                        <option value="消费贷">消费贷</option>
+                        <option value="经营贷">经营贷</option>
+                        <option value="房贷">房贷</option>
+                        <option value="车贷">车贷</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>需求描述</label>
+                    <textarea id="client-desc" rows="4" placeholder="请简要描述您的需求..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">确认并支付</button>
+            </form>
+
+            <div style="margin-top: 25px; text-align: center;">
+                <button class="btn btn-secondary" onclick="showPage('page-dashboard')">查看我的订单</button>
+            </div>
+        </div>
+
+        <!-- 收款页面 -->
+        <div class="page" id="page-pay">
+            <button class="btn btn-secondary" onclick="showPage('page-main')" style="margin-bottom: 20px;">← 返回</button>
+            <div style="text-align: center; padding: 30px 0;">
+                <h2 style="font-size: 24px; color: #2b6cb0; margin-bottom: 15px;">贷款咨询费</h2>
+                <p style="color: #718096; margin-bottom: 30px;">
+                    支付材料费后，我们将为您提供专业的贷款咨询服务<br>
+                    包括：需求分析、方案推荐、材料准备指导
+                </p>
+                <button class="btn btn-primary" onclick="confirmPayment()">前往支付</button>
+            </div>
+        </div>
+
+        <!-- 订单页面 -->
+        <div class="page" id="page-dashboard">
+            <h2 class="section-title">我的订单</h2>
+
+            <div id="orders-list">
+                <p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>
+            </div>
+        </div>
+
+        <!-- 数据导出页面 -->
+        <div class="page" id="page-export">
+            <div class="back-btn" onclick="showPage('page-dashboard')">← 返回</div>
+            <h2 class="section-title">数据管理</h2>
+
+            <div class="data-info">
+                <h3>📊 数据说明</h3>
+                <p>以下数据已保存在您的浏览器本地存储中：</p>
+                <ul style="margin-left: 20px; color: #4a5568; font-size: 14px; margin-top: 12px;">
+                    <li>已注册账号信息</li>
+                    <li>已提交的客户资料</li>
+                    <li>订单状态记录</li>
+                </ul>
+            </div>
+
+            <button class="btn btn-primary" onclick="exportData()">导出所有数据</button>
+
+            <button class="btn btn-outline" style="margin-top: 18px;" onclick="clearAllData()">清除所有数据</button>
+        </div>
+
+        <!-- 管理员密码设置弹窗 -->
+        <div class="modal" id="admin-password-modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeAdminPasswordModal()">&times;</span>
+                <div class="modal-title">设置管理员密码</div>
+                <div class="form-group">
+                    <label>新密码</label>
+                    <input type="password" id="new-admin-password" placeholder="请输入新密码（至少4位）">
+                </div>
+                <div class="form-group">
+                    <label>确认密码</label>
+                    <input type="password" id="confirm-admin-password" placeholder="请再次输入密码">
+                </div>
+                <button class="btn btn-primary" onclick="saveAdminPassword()">保存</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2026 信贷咨询服务 - 版权所有
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'loan_service_data';
+
+        let currentUser = null;
+        let emailConfig = {
+            serviceId: '',
+            templateId: '',
+            publicKey: ''
+        };
+
+        // 初始化 EmailJS
+        function initEmailJS() {
+            const savedConfig = localStorage.getItem('email_config');
+            if (savedConfig) {
+                emailConfig = JSON.parse(savedConfig);
+                document.getElementById('service-id').value = emailConfig.serviceId;
+                document.getElementById('template-id').value = emailConfig.templateId;
+                document.getElementById('public-key').value = emailConfig.publicKey;
+            }
+
+            if (emailConfig.publicKey) {
+                emailjs.init(emailConfig.publicKey);
+            }
+        }
+
+        // 保存 EmailJS 配置
+        function saveEmailConfig() {
+            const serviceId = document.getElementById('service-id').value.trim();
+            const templateId = document.getElementById('template-id').value.trim();
+            const publicKey = document.getElementById('public-key').value.trim();
+
+            if (!serviceId || !templateId || !publicKey) {
+                alert('请填写完整的 EmailJS 配置信息');
+                return;
+            }
+
+            emailConfig = { serviceId, templateId, publicKey };
+            localStorage.setItem('email_config', JSON.stringify(emailConfig));
+            emailjs.init(publicKey);
+
+            alert('配置保存成功！');
+        }
+
+        // 获取数据
+        function getData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+
+        // 保存数据
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // 初始化
+        function init() {
+            initEmailJS();
+
+            // 从服务器加载用户数据到本地
+            loadUsersFromServer();
+
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                const parsed = JSON.parse(data);
+                if (parsed.currentUser) {
+                    currentUser = parsed.currentUser;
+                    showPage('page-main');
+                }
+            }
+        }
+
+        // 从服务器加载用户数据到本地
+        async function loadUsersFromServer() {
+            try {
+                const response = await fetch('http://localhost:5000/api/get-users');
+                if (response.ok) {
+                    const result = await response.json();
+                    const users = result.users || {};
+
+                    // 更新本地数据
+                    const currentData = getData();
+                    currentData.users = currentData.users || {};
+                    for (let phone in users) {
+                        currentData.users[phone] = users[phone];
+                    }
+
+                    // 保存到本地
+                    saveData(currentData);
+
+                    console.log('用户数据已从服务器同步:', Object.keys(users).length + ' 位用户');
+
+                    // 如果没有用户，提示注册
+                    if (Object.keys(users).length === 0) {
+                        console.log('没有找到用户数据，跳转到注册页');
+                        showPage('page-register');
+                    }
+                }
+            } catch (e) {
+                console.log('从服务器加载用户数据失败:', e);
+            }
+        }
+
+        // 页面切换
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            if (pageId === 'page-dashboard') {
+                renderOrders();
+            }
+        }
+
+        function toggleTerms(id) {
+            const content = document.getElementById(id);
+            content.classList.toggle('open');
+        }
+
+        function checkAgree() {
+            const agree = document.getElementById('agree-terms').checked;
+            document.getElementById('btn-register').disabled = !agree;
+        }
+
+        async function register() {
+            const phone = document.getElementById('reg-phone').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+
+            if (!phone) {
+                alert('请输入手机号码');
+                return;
+            }
+
+            if (!/^\d{11}$/.test(phone)) {
+                alert('请输入正确的11位手机号码');
+                return;
+            }
+
+            if (!password || password.length < 6) {
+                alert('密码长度至少6位');
+                return;
+            }
+
+            if (password !== confirm) {
+                alert('两次密码输入不一致');
+                return;
+            }
+
+            // 先从服务器获取最新数据
+            try {
+                const response = await fetch('http://localhost:5000/api/get-users');
+                if (response.ok) {
+                    const result = await response.json();
+                    const serverUsers = result.users || {};
+
+                    // 检查服务器数据中是否已存在该手机号
+                    if (serverUsers[phone]) {
+                        // 手机号已存在，询问用户是否覆盖
+                        const confirmed = confirm(`手机号 ${phone} 已存在，是否使用此号码继续注册并覆盖原有账号？\n\n(密码将更新为新密码)`);
+
+                        if (!confirmed) {
+                            alert('已取消注册');
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('从服务器检查用户失败:', e);
+            }
+
+            const data = getData();
+            data.users = data.users || {};
+
+            // 检查本地数据中是否已存在该手机号
+            if (data.users[phone]) {
+                alert('该手机号已注册');
+                return;
+            }
+
+            // 创建新用户
+            data.users[phone] = {
+                phone: phone,
+                password: password,
+                createdAt: new Date().toISOString()
+            };
+
+            currentUser = { phone: phone };
+            saveData(data);
+
+            // 保存到服务器
+            saveUserToServer(data.users);
+
+            alert('注册成功！\n\n我们会尽快与您联系。');
+            showPage('page-main');
+        }
+
+        async function login() {
+            const phone = document.getElementById('login-phone').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            if (!phone) {
+                alert('请输入手机号码');
+                return;
+            }
+
+            if (!password) {
+                alert('请输入密码');
+                return;
+            }
+
+            // 先从服务器获取最新数据
+            try {
+                const response = await fetch('http://localhost:5000/api/get-users');
+                if (response.ok) {
+                    const result = await response.json();
+                    const serverUsers = result.users || {};
+
+                    // 检查服务器数据中是否存在该手机号
+                    if (!serverUsers[phone]) {
+                        alert('该账号未注册');
+                        return;
+                    }
+
+                    // 检查密码是否正确
+                    if (serverUsers[phone].password !== password) {
+                        alert('密码错误');
+                        return;
+                    }
+
+                    // 登录成功，保存到本地
+                    currentUser = { phone: phone };
+                    saveData({ users: serverUsers, orders: getData().orders || [] });
+
+                    alert('登录成功！');
+                    showPage('page-main');
+                    return;
+                }
+            } catch (e) {
+                console.log('从服务器登录失败:', e);
+            }
+
+            // 服务器请求失败，回退到本地数据
+            const data = getData();
+            if (!data.users || !data.users[phone]) {
+                alert('该账号未注册');
+                return;
+            }
+
+            if (data.users[phone].password !== password) {
+                alert('密码错误');
+                return;
+            }
+
+            currentUser = { phone: phone };
+            saveData(data);
+
+            alert('登录成功！');
+            showPage('page-main');
+        }
+
+        async function submitForm(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('client-name').value.trim();
+            const phone = document.getElementById('client-phone').value.trim();
+            const idCard = document.getElementById('client-id').value.trim();
+            const bank = document.getElementById('client-bank').value.trim();
+            const type = document.getElementById('client-type').value;
+            const desc = document.getElementById('client-desc').value.trim();
+
+            if (!name) {
+                alert('请输入姓名');
+                return;
+            }
+
+            if (!phone || !/^\d{11}$/.test(phone)) {
+                alert('请输入正确的手机号码');
+                return;
+            }
+
+            if (!idCard || !/^[\dXx]{18}$/.test(idCard)) {
+                alert('请输入正确的身份证号码');
+                return;
+            }
+
+            // 验证用户是否已登录
+            if (!currentUser || !currentUser.phone) {
+                alert('请先登录');
+                showPage('page-login');
+                return;
+            }
+
+            // 验证提交的手机号与当前登录用户一致
+            if (currentUser.phone !== phone) {
+                alert('提交的手机号与登录账号不一致');
+                return;
+            }
+
+            const newOrder = {
+                id: Date.now().toString(),
+                clientName: name,
+                clientPhone: phone,
+                idCard: idCard,
+                bank: bank,
+                type: type,
+                desc: desc,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            // 先保存到服务器
+            try {
+                await fetch('http://localhost:5000/api/save-order', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({order: newOrder})
+                });
+            } catch (e) {
+                console.log('保存订单到服务器失败:', e);
+            }
+
+            // 从服务器获取最新数据
+            try {
+                // 同时获取用户和订单数据
+                const [usersResponse, ordersResponse] = await Promise.all([
+                    fetch('http://localhost:5000/api/get-users'),
+                    fetch('http://localhost:5000/api/get-orders')
+                ]);
+
+                if (usersResponse.ok && ordersResponse.ok) {
+                    const result = await usersResponse.json();
+                    const ordersResult = await ordersResponse.json();
+
+                    // 更新本地数据
+                    const data = getData();
+                    data.users = result.users || {};
+                    data.orders = ordersResult.orders || [];
+
+                    // 更新当前用户
+                    currentUser = {
+                        phone: phone,
+                        orders: ordersResult.orders ? ordersResult.orders.filter(o => o && o.clientPhone === phone).map(o => o.id) : []
+                    };
+
+                    saveData(data);
+
+                    document.getElementById('client-form').reset();
+                    alert('资料提交成功！\n\n请支付材料费30元后点击下方按钮确认付款');
+
+                    showPage('page-pay');
+                    return;
+                }
+            } catch (e) {
+                console.log('从服务器获取数据失败:', e);
+            }
+
+            // 服务器请求失败，回退到本地数据
+            const data = getData();
+            data.orders = data.orders || [];
+
+            const order = {
+                ...newOrder,
+                id: Date.now().toString()
+            };
+
+            data.orders.unshift(order);
+            saveData(data);
+
+            currentUser.orders = currentUser.orders || [];
+            currentUser.orders.unshift(order.id);
+            saveData(data);
+
+            document.getElementById('client-form').reset();
+            alert('资料提交成功！\n\n请支付材料费30元后点击下方按钮确认付款');
+
+            showPage('page-pay');
+        }
+
+        async function confirmPayment() {
+            // 验证用户是否已登录
+            if (!currentUser || !currentUser.phone) {
+                alert('请先登录');
+                showPage('page-login');
+                return;
+            }
+
+            const orderId = currentUser.orders && currentUser.orders[0];
+            if (!orderId) {
+                alert('未找到订单');
+                return;
+            }
+
+            // 先从服务器获取最新订单数据
+            try {
+                // 同时获取用户和订单数据
+                const [usersResponse, ordersResponse] = await Promise.all([
+                    fetch('http://localhost:5000/api/get-users'),
+                    fetch('http://localhost:5000/api/get-orders')
+                ]);
+
+                if (usersResponse.ok && ordersResponse.ok) {
+                    const result = await usersResponse.json();
+                    const ordersResult = await ordersResponse.json();
+
+                    // 检查订单是否存在
+                    const order = ordersResult.orders && ordersResult.orders.find(o => o && o.id === orderId);
+                    if (!order) {
+                        alert('未找到订单');
+                        return;
+                    }
+
+                    // 检查订单是否已支付
+                    if (order.status === 'paid') {
+                        alert('该订单已经支付过了！');
+                        return;
+                    }
+
+                    // 更新订单状态为"支付中"
+                    order.status = 'paying';
+                    order.paidAt = new Date().toISOString();
+                    order.updatedAt = new Date().toISOString();
+
+                    // 同步到服务器
+                    try {
+                        await fetch('http://localhost:5000/api/save-order', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({order: order})
+                        });
+                    } catch (e) {
+                        console.log('同步订单状态到服务器失败:', e);
+                    }
+
+                    // 更新本地数据
+                    const data = getData();
+                    data.users = serverData.users || {};
+                    data.orders = serverData.orders || [];
+
+                    // 更新当前用户订单列表
+                    currentUser.orders = serverData.orders ? serverData.orders.filter(o => o && o.clientPhone === currentUser.phone).map(o => o.id) : [];
+
+                    saveData(data);
+
+                    alert('正在跳转到支付页面...\n\n请完成支付后等待自动跳转。');
+
+                    // 跳转到支付页面
+                    setTimeout(() => {
+                        window.location.href = 'pay_page.html';
+                    }, 1500);
+
+                    return;
+                }
+            } catch (e) {
+                console.log('从服务器获取订单失败:', e);
+            }
+
+            // 服务器请求失败，回退到本地数据
+            const data = getData();
+            const order = data.orders.find(o => o && o.id === orderId);
+
+            // 检查订单是否已支付
+            if (order && order.status === 'paid') {
+                alert('该订单已经支付过了！');
+                return;
+            }
+
+            if (order) {
+                order.status = 'paying';
+                order.paidAt = new Date().toISOString();
+                order.updatedAt = new Date().toISOString();
+                saveData(data);
+
+                // 同步到服务器
+                try {
+                    fetch('http://localhost:5000/api/save-order', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({order: order})
+                    });
+                } catch (e) {
+                    console.log('同步订单状态到服务器失败:', e);
+                }
+            }
+
+            alert('正在跳转到支付页面...\n\n请完成支付后等待自动跳转。');
+
+            // 跳转到支付页面
+            setTimeout(() => {
+                window.location.href = 'pay_page.html';
+            }, 1500);
+        }
+
+        async function renderOrders() {
+            const ordersList = document.getElementById('orders-list');
+
+            // 验证用户是否已登录
+            if (!currentUser || !currentUser.phone) {
+                ordersList.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">请先登录</p>';
+                return;
+            }
+
+            const ordersListEl = ordersList;
+
+            // 先从服务器获取最新订单数据
+            try {
+                // 同时获取用户和订单数据
+                const [usersResponse, ordersResponse] = await Promise.all([
+                    fetch('http://localhost:5000/api/get-users'),
+                    fetch('http://localhost:5000/api/get-orders')
+                ]);
+
+                if (usersResponse.ok && ordersResponse.ok) {
+                    const result = await usersResponse.json();
+                    const ordersResult = await ordersResponse.json();
+
+                    const orders = ordersResult.orders ? ordersResult.orders.filter(o => o && o.clientPhone === currentUser.phone) : [];
+                    currentUser.orders = orders.map(o => o.id);
+
+                    saveData({
+                        users: result.users || {},
+                        orders: ordersResult.orders || []
+                    });
+
+                    if (orders.length === 0) {
+                        ordersListEl.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>';
+                        return;
+                    }
+
+                    let html = '';
+
+                    orders.forEach(order => {
+                        const statusMap = {
+                            'pending': '<span class="status-badge status-pending">待支付</span>',
+                            'paid': '<span class="status-badge status-paid">已支付</span>',
+                            'paying': '<span class="status-badge status-pending">支付中</span>',
+                            'confirmed': '<span class="status-badge status-confirmed">已确认</span>'
+                        };
+
+                        html += `
+                            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <span style="font-weight: 600; color: #1a202c;">订单号: ${order.id}</span>
+                                    ${statusMap[order.status]}
+                                </div>
+                                <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">姓名: ${order.clientName}</p>
+                                <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">手机: ${order.clientPhone}</p>
+                                <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">类型: ${order.type}</p>
+                                <p style="color: #718096; font-size: 13px;">创建时间: ${new Date(order.createdAt).toLocaleString('zh-CN')}</p>
+                                ${order.paidAt ? `<p style="color: #276749; font-size: 13px; margin-top: 8px;">支付时间: ${new Date(order.paidAt).toLocaleString('zh-CN')}</p>` : ''}
+                            </div>
+                        `;
+                    });
+
+                    ordersListEl.innerHTML = html;
+                    return;
+                }
+            } catch (e) {
+                console.log('从服务器获取订单失败:', e);
+            }
+
+            // 服务器请求失败，回退到本地数据
+            const data = getData();
+            const orders = currentUser.orders || [];
+            const clientOrders = data.orders ? data.orders.filter(o => o && orders.includes(o.id)) : [];
+
+            if (clientOrders.length === 0) {
+                ordersListEl.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>';
+                return;
+            }
+
+            let html = '';
+
+            clientOrders.forEach(order => {
+                const statusMap = {
+                    'pending': '<span class="status-badge status-pending">待支付</span>',
+                    'paid': '<span class="status-badge status-paid">已支付</span>',
+                    'paying': '<span class="status-badge status-pending">支付中</span>',
+                    'confirmed': '<span class="status-badge status-confirmed">已确认</span>'
+                };
+
+                html += `
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-weight: 600; color: #1a202c;">订单号: ${order.id}</span>
+                            ${statusMap[order.status]}
+                        </div>
+                        <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">姓名: ${order.clientName}</p>
+                        <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">手机: ${order.clientPhone}</p>
+                        <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">类型: ${order.type}</p>
+                        <p style="color: #718096; font-size: 13px;">创建时间: ${new Date(order.createdAt).toLocaleString('zh-CN')}</p>
+                        ${order.paidAt ? `<p style="color: #276749; font-size: 13px; margin-top: 8px;">支付时间: ${new Date(order.paidAt).toLocaleString('zh-CN')}</p>` : ''}
+                    </div>
+                `;
+            });
+
+            ordersListEl.innerHTML = html;
+        }
+
+        function exportData() {
+            const data = getData();
+            const exportText = `
+信贷咨询服务 - 数据导出
+导出时间: ${new Date().toLocaleString('zh-CN')}
+
+===== 用户信息 =====
+${JSON.stringify(data.users || {}, null, 2)}
+
+===== 订单信息 =====
+${JSON.stringify(data.orders || [], null, 2)}
+
+===== 当前用户 =====
+${JSON.stringify(currentUser || {}, null, 2)}
+            `.trim();
+
+            const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `信贷咨询数据_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert('数据导出成功！');
+        }
+
+        function clearAllData() {
+            if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                localStorage.removeItem(STORAGE_KEY);
+                currentUser = null;
+                alert('数据已清除');
+                showPage('page-terms');
+            }
+        }
+
+        // 保存用户数据到服务器
+        async function saveUserToServer(users) {
+            try {
+                await fetch('http://localhost:5000/api/save-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        users: users
+                    })
+                });
+            } catch (e) {
+                console.error('保存用户数据失败:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        // 管理员登录回车支持
+        document.getElementById('admin-password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loginAdmin();
+            }
+        });
+    </script>
+    </script>
+</body>
+</html>

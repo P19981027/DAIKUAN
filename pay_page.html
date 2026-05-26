@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支付确认</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 24px; color: #2b6cb0; }
+        .header p { color: #718096; font-size: 14px; margin-top: 10px; }
+
+        .order-info {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .order-item { margin-bottom: 15px; }
+        .order-item label { display: block; color: #718096; font-size: 14px; margin-bottom: 5px; }
+        .order-item .value { font-size: 18px; color: #2d3748; font-weight: 600; }
+
+        .payment-info {
+            background: #ebf8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #2b6cb0;
+        }
+
+        .payment-info .price { font-size: 28px; color: #2b6cb0; font-weight: bold; }
+        .payment-info .price span { font-size: 14px; }
+
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; font-weight: 600; transition: all 0.3s; }
+        .btn-primary { background: #2b6cb0; color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .back-link { color: #2b6cb0; cursor: pointer; text-decoration: underline; display: inline-block; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>支付确认</h1>
+            <p>请确认订单信息并完成支付</p>
+        </div>
+
+        <div class="order-info">
+            <div class="order-item">
+                <label>订单编号</label>
+                <div class="value" id="order-id">加载中...</div>
+            </div>
+            <div class="order-item">
+                <label>客户姓名</label>
+                <div class="value" id="client-name">加载中...</div>
+            </div>
+            <div class="order-item">
+                <label>支付金额</label>
+                <div class="value">¥<span id="amount-display">30.00</span></div>
+            </div>
+        </div>
+
+        <div style="text-align: center; padding: 30px 0;">
+            <img src="2dece3f20d08287fa5177df4ad47088d.jpg" alt="收款码1" style="max-width: 200px; margin: 10px;">
+            <img src="3b40f2118553a2f740397572e3fd6eb1.jpg" alt="收款码2" style="max-width: 200px; margin: 10px;">
+            <p style="color: #2b6cb0; margin-top: 15px;">请扫描上方二维码支付</p>
+        </div>
+
+        <div style="text-align: center; padding: 30px 0;">
+            <a class="back-link" onclick="backToDashboard()">返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'loan_service_data';
+
+        function getData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // 获取当前订单ID
+        function getCurrentOrderId() {
+            const data = getData();
+            const orders = data.orders || [];
+            if (orders.length > 0) {
+                return orders[0].id;
+            }
+            return null;
+        }
+
+        function backToDashboard() {
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const orderId = getCurrentOrderId();
+
+            if (!orderId) {
+                document.getElementById('order-id').textContent = '未找到订单';
+                document.getElementById('client-name').textContent = '请先提交订单';
+                return;
+            }
+
+            const data = getData();
+            const order = data.orders.find(o => o && o.id === orderId);
+
+            if (order) {
+                document.getElementById('order-id').textContent = order.id.substring(0, 12);
+                document.getElementById('client-name').textContent = order.clientName || '-';
+
+                document.getElementById('amount-display').textContent = '30.00';
+                document.getElementById('amount-display-2').textContent = '30.00';
+            } else {
+                console.error('未找到订单');
+            }
+        });
+    </script>
+</body>
+</html>

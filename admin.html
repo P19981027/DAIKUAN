@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 信贷咨询服务</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 2px 20px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%); color: white; padding: 30px 25px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .nav { display: flex; background: white; border-bottom: 3px solid #2b6cb0; padding: 0 20px; }
+        .nav-btn { flex: 1; padding: 15px 10px; border: none; background: transparent; cursor: pointer; font-size: 15px; font-weight: 500; color: #718096; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .nav-btn:hover { color: #2b6cb0; background: #f7fafc; }
+        .nav-btn.active { color: #2b6cb0; border-bottom-color: #2b6cb0; background: white; }
+        .page { padding: 30px; display: none; }
+        .page.active { display: block; }
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin: 5px; font-weight: 600; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%); color: white; }
+        .btn-secondary { background: #e2e8f0; color: #4a5568; }
+        .btn-primary:hover, .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 14px 12px; text-align: left; border: 1px solid #e2e8f0; }
+        th { background: #f7fafc; font-weight: 600; }
+        tr:nth-child(even) { background: #f8fafc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>管理后台</h1>
+            <p>信贷咨询服务管理面板</p>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn active" onclick="showPage('page-config')">⚙ 配置</button>
+            <button class="nav-btn" onclick="showPage('page-users')">📋 用户列表</button>
+            <button class="nav-btn" onclick="showPage('page-history')">📤 发送历史</button>
+        </div>
+
+        <div class="page active" id="page-config">
+            <h2>系统配置</h2>
+            <div style="margin-bottom: 20px;">
+                <p><strong>QQ邮箱：</strong>配置后会自动使用该邮箱发送用户信息</p>
+            </div>
+            <div style="background: #f7fafc; padding: 15px; border-radius: 5px;">
+                <label>QQ邮箱地址：</label>
+                <input type="email" id="admin-email" placeholder="例如：943411733@qq.com" style="width: 100%; padding: 8px; margin-top: 5px;">
+                <button class="btn btn-primary" onclick="saveAdminEmail()" style="margin-top: 10px;">保存邮箱</button>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="logout()">🚪 退出登录</button>
+            </div>
+        </div>
+
+        <div class="page" id="page-users">
+            <h2>用户列表</h2>
+            <div id="users-container">
+                <p style="color: #718096;">正在加载...</p>
+            </div>
+            <div style="margin-top: 25px;">
+                <button class="btn btn-primary" onclick="copyAndSendEmail()">📧 自动发送到QQ邮箱</button>
+                <button class="btn btn-secondary" onclick="showPage('page-config')">返回配置</button>
+            </div>
+        </div>
+
+        <div class="page" id="page-user-details" >
+            <h2>用户订单详情</h2>
+            <div style="margin-bottom: 15px;">
+                <button class="btn btn-secondary" onclick="showPage('page-users')">返回用户列表</button>
+            </div>
+            <div id="user-details-content"></div>
+        </div>
+
+        <div class="page" id="page-history">
+            <h2>发送历史</h2>
+            <div id="history-container">
+                <p style="color: #718096;">暂无发送记录</p>
+            </div>
+            <div style="margin-top: 25px;">
+                <button class="btn btn-secondary" onclick="showPage('page-users')">返回用户列表</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'admin_email';
+        let adminEmail = '';
+        let allOrders = [];
+
+        function showPage(pageId) {
+            console.log('=== showPage 被调用 ===');
+            console.log('目标页面:', pageId);
+
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+                console.log('隐藏页面:', page.id);
+            });
+
+            // 显示目标页面
+            const targetPage = document.getElementById(pageId);
+            console.log('目标页面元素:', targetPage);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                console.log('显示页面:', pageId);
+            } else {
+                console.error('目标页面元素未找到:', pageId);
+            }
+
+            // 更新按钮状态
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+            // 尝试找到并激活对应的导航按钮
+            if (pageId === 'page-config') {
+                document.querySelector('.nav-btn.active')?.classList.add('active');
+            } else if (pageId === 'page-users') {
+                document.querySelectorAll('.nav-btn')[1]?.classList.add('active');
+            } else if (pageId === 'page-history') {
+                document.querySelectorAll('.nav-btn')[2]?.classList.add('active');
+            } else if (pageId === 'page-user-details') {
+                // 用户详情页面由 showUserDetails 函数直接渲染，不需要额外操作
+            }
+
+            console.log('准备调用 showAllUsers');
+            if (pageId === 'page-users') {
+                console.log('调用 showAllUsers()');
+                showAllUsers();
+            } else if (pageId === 'page-history') {
+                console.log('调用 showSendingHistory()');
+                showSendingHistory();
+            }
+            console.log('=== showPage 完成 ===');
+        }
+
+        async function showAllUsers() {
+            console.log('=== showAllUsers 开始执行 ===');
+
+            const container = document.getElementById('users-container');
+            if (!container) {
+                console.error('❌ users-container 元素未找到');
+                return;
+            }
+
+            try {
+                console.log('1. 设置加载中提示');
+                container.innerHTML = '<p style="color: #718096;">正在加载...</p>';
+
+                console.log('2. 发送 fetch 请求到 http://localhost:5000/api/get-users');
+                const response = await fetch('http://localhost:5000/api/get-users');
+                console.log('3. 响应收到，状态码:', response.status);
+                console.log('4. 响应 OK:', response.ok);
+
+                if (!response.ok) {
+                    throw new Error('服务器错误: ' + response.status);
+                }
+
+                console.log('5. 解析 JSON');
+                const result = await response.json();
+                console.log('6. JSON 解析成功');
+                console.log('7. 用户数据:', result.users);
+
+                const users = result.users || {};
+                console.log('8. 用户数量:', Object.keys(users).length);
+
+                if (Object.keys(users).length === 0) {
+                    console.log('9. 没有用户数据');
+                    container.innerHTML = '<p style="color: #718096;">暂无用户，请先在首页注册用户</p>';
+                    return;
+                }
+
+                console.log('10. 开始渲染用户列表');
+                let html = '<table style="width: 100%; border-collapse: collapse; margin-top: 15px;"><thead><tr style="background: #f7fafc;"><th>序号</th><th>手机号</th><th>注册时间</th><th>操作</th></tr></thead><tbody>';
+
+                let index = 0;
+                for (let phone in users) {
+                    const createdAt = users[phone].createdAt ?
+                        new Date(users[phone].createdAt).toLocaleString('zh-CN') :
+                        '未知时间';
+                    html += `<tr><td>${index + 1}</td><td>${phone}</td><td>${createdAt}</td><td><button class="btn btn-secondary" style="padding: 6px 15px; font-size: 12px;" onclick="showUserDetails('${phone}')">查看订单</button></td></tr>`;
+                    index++;
+                }
+
+                html += '</tbody></table>';
+                html += `<p style="margin-top: 15px; color: #718096;">共 ${Object.keys(users).length} 位用户</p>`;
+                container.innerHTML = html;
+
+                console.log('11. 渲染完成');
+
+            } catch (e) {
+                console.error('❌ 加载失败:', e);
+                container.innerHTML = '<p style="color: red;">加载失败: ' + e.message + '</p>';
+            }
+
+            console.log('=== showAllUsers 结束 ===');
+        }
+
+        async function showUserDetails(phone) {
+            console.log('=== showUserDetails 开始执行 ===');
+            console.log('用户手机号:', phone);
+
+            const content = document.getElementById('user-details-content');
+            if (!content) {
+                console.error('❌ user-details-content 元素未找到');
+                return;
+            }
+
+            try {
+                console.log('1. 设置加载中...');
+                content.innerHTML = '<p style="color: #718096;">正在加载订单...</p>';
+
+                console.log('2. 发送 fetch 请求获取订单');
+                const response = await fetch('http://localhost:5000/api/get-orders');
+                console.log('3. 响应状态:', response.status);
+
+                if (!response.ok) {
+                    throw new Error('获取订单失败: ' + response.status);
+                }
+
+                const result = await response.json();
+                console.log('4. 订单数据:', result);
+
+                allOrders = result.orders || [];
+
+                console.log('5. 筛选该用户的订单');
+                const userOrders = allOrders.filter(order => order.clientPhone === phone);
+
+                console.log('6. 订单数量:', userOrders.length);
+
+                if (userOrders.length === 0) {
+                    content.innerHTML = `<h3>${phone} 的订单</h3><p style="color: #718096; margin-top: 10px;">暂无订单记录</p>`;
+                    return;
+                }
+
+                console.log('7. 开始渲染订单列表');
+                let html = `<h3>${phone} 的订单</h3>`;
+                html += `<p style="color: #718096; margin-top: 10px;">共 ${userOrders.length} 条订单记录</p>`;
+                html += '<table style="width: 100%; border-collapse: collapse; margin-top: 15px;"><thead><tr style="background: #f7fafc;"><th>订单ID</th><th>客户姓名</th><th>银行</th><th>类型</th><th>状态</th><th>提交时间</th></tr></thead><tbody>';
+
+                userOrders.forEach(order => {
+                    const createdAt = order.createdAt ?
+                        new Date(order.createdAt).toLocaleString('zh-CN') :
+                        '未知时间';
+                    const statusBadge = order.status === 'paid' ?
+                        '<span style="color: #48bb78; font-weight: bold;">✓ 已支付</span>' :
+                        '<span style="color: #ed8936; font-weight: bold;">⏳ 待支付</span>';
+
+                    html += `<tr>
+                        <td>${order.id.substring(0, 8)}...</td>
+                        <td>${order.clientName || '-'}</td>
+                        <td>${order.bank || '-'}</td>
+                        <td>${order.type || '-'}</td>
+                        <td>${statusBadge}</td>
+                        <td>${createdAt}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+                console.log('8. 内容设置完成');
+
+                console.log('9. 显示页面');
+                showPage('page-user-details');
+
+            } catch (e) {
+                console.error('❌ 显示详情失败:', e);
+                content.innerHTML = `<h3>${phone} 的订单</h3><p style="color: red; margin-top: 10px;">加载失败: ${e.message}</p>`;
+            }
+
+            console.log('=== showUserDetails 结束 ===');
+        }
+
+        async function copyAndSendEmail() {
+            try {
+                const response = await fetch('http://localhost:5000/api/get-users');
+                if (!response.ok) {
+                    throw new Error('服务器错误: ' + response.status);
+                }
+
+                const result = await response.json();
+                const users = result.users || {};
+
+                if (Object.keys(users).length === 0) {
+                    alert('❌ 暂无用户\n\n请先在首页注册用户，然后回来查看');
+                    return;
+                }
+
+                const email = adminEmail || '943411733@qq.com';
+
+                const response2 = await fetch('http://localhost:5000/api/send-users-email', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        users: users,
+                        email: email
+                    })
+                });
+
+                const result2 = await response2.json();
+
+                if (result2.success) {
+                    alert('✅ 邮件发送成功！');
+                } else {
+                    alert('❌ 发送失败：' + result2.error);
+                }
+            } catch (e) {
+                alert('❌ 发送失败：' + e.message);
+            }
+        }
+
+        function showSendingHistory() {
+            document.getElementById('history-container').innerHTML =
+                '<p style="color: #718096;">暂无发送记录（功能开发中）</p>';
+        }
+
+        function saveAdminEmail() {
+            const email = document.getElementById('admin-email').value.trim();
+
+            if (!email || !email.includes('@')) {
+                alert('请输入有效的邮箱地址');
+                return;
+            }
+
+            adminEmail = email;
+            localStorage.setItem(STORAGE_KEY, email);
+            alert('✅ 邮箱配置已保存！');
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('admin_logged');
+                location.reload();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== 页面加载完成 ===');
+            const savedEmail = localStorage.getItem(STORAGE_KEY);
+            if (savedEmail) {
+                adminEmail = savedEmail;
+                document.getElementById('admin-email').value = adminEmail;
+                console.log('邮箱已加载:', adminEmail);
+            }
+            console.log('初始化完成');
+        });
+    </script>
+</body>
+</html>
