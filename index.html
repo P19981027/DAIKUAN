@@ -946,34 +946,16 @@
             }
         }
 
-        // 从服务器加载用户数据到本地
+        // 从服务器加载用户数据到本地（仅恢复当前登录用户状态）
         async function loadUsersFromServer() {
             try {
-                const response = await fetch('http://localhost:5000/api/get-users');
-                if (response.ok) {
-                    const result = await response.json();
-                    const users = result.users || {};
-
-                    // 更新本地数据
-                    const currentData = getData();
-                    currentData.users = currentData.users || {};
-                    for (let phone in users) {
-                        currentData.users[phone] = users[phone];
-                    }
-
-                    // 保存到本地
-                    saveData(currentData);
-
-                    console.log('用户数据已从服务器同步:', Object.keys(users).length + ' 位用户');
-
-                    // 如果没有用户，提示注册
-                    if (Object.keys(users).length === 0) {
-                        console.log('没有找到用户数据，跳转到注册页');
-                        showPage('page-register');
-                    }
+                const data = getData();
+                if (data.currentUser && data.currentUser.phone) {
+                    currentUser = data.currentUser;
+                    showPage('page-main');
                 }
             } catch (e) {
-                console.log('从服务器加载用户数据失败:', e);
+                console.log('恢复登录状态失败:', e);
             }
         }
 
@@ -1022,26 +1004,21 @@
                 return;
             }
 
-            // 先从服务器获取最新数据
+            // 先检查服务器是否已存在该手机号
             try {
-                const response = await fetch('http://localhost:5000/api/get-users');
-                if (response.ok) {
-                    const result = await response.json();
-                    const serverUsers = result.users || {};
-
-                    // 检查服务器数据中是否已存在该手机号
-                    if (serverUsers[phone]) {
-                        // 手机号已存在，询问用户是否覆盖
-                        const confirmed = confirm(`手机号 ${phone} 已存在，是否使用此号码继续注册并覆盖原有账号？\n\n(密码将更新为新密码)`);
-
-                        if (!confirmed) {
-                            alert('已取消注册');
-                            return;
-                        }
-                    }
+                const checkRes = await fetch('/api/login-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone, password: '__check__'})
+                });
+                const checkData = await checkRes.json();
+                if (!checkData.error || !checkData.error.includes('未注册')) {
+                    alert('该手机号已注册，请直接登录');
+                    showPage('page-login');
+                    return;
                 }
             } catch (e) {
-                console.log('从服务器检查用户失败:', e);
+                console.log('检查用户失败:', e);
             }
 
             const data = getData();
@@ -1074,64 +1051,27 @@
             const phone = document.getElementById('login-phone').value.trim();
             const password = document.getElementById('login-password').value;
 
-            if (!phone) {
-                alert('请输入手机号码');
-                return;
-            }
+            if (!phone) { alert('请输入手机号码'); return; }
+            if (!password) { alert('请输入密码'); return; }
 
-            if (!password) {
-                alert('请输入密码');
-                return;
-            }
-
-            // 先从服务器获取最新数据
             try {
-                const response = await fetch('http://localhost:5000/api/get-users');
-                if (response.ok) {
-                    const result = await response.json();
-                    const serverUsers = result.users || {};
-
-                    // 检查服务器数据中是否存在该手机号
-                    if (!serverUsers[phone]) {
-                        alert('该账号未注册');
-                        return;
-                    }
-
-                    // 检查密码是否正确
-                    if (serverUsers[phone].password !== password) {
-                        alert('密码错误');
-                        return;
-                    }
-
-                    // 登录成功，保存到本地
+                const response = await fetch('/api/login-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone, password})
+                });
+                const result = await response.json();
+                if (result.success) {
                     currentUser = { phone: phone };
-                    saveData({ users: serverUsers, orders: getData().orders || [] });
-
+                    saveData({...getData(), currentUser});
                     alert('登录成功！');
                     showPage('page-main');
-                    return;
+                } else {
+                    alert(result.error || '登录失败');
                 }
             } catch (e) {
-                console.log('从服务器登录失败:', e);
+                alert('登录失败: ' + e.message);
             }
-
-            // 服务器请求失败，回退到本地数据
-            const data = getData();
-            if (!data.users || !data.users[phone]) {
-                alert('该账号未注册');
-                return;
-            }
-
-            if (data.users[phone].password !== password) {
-                alert('密码错误');
-                return;
-            }
-
-            currentUser = { phone: phone };
-            saveData(data);
-
-            alert('登录成功！');
-            showPage('page-main');
         }
 
         async function submitForm(event) {
@@ -1187,7 +1127,7 @@
 
             // 先保存到服务器
             try {
-                await fetch('http://localhost:5000/api/save-order', {
+                await fetch('/api/save-order', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({order: newOrder})
@@ -1198,256 +1138,80 @@
 
             // 从服务器获取最新数据
             try {
-                // 同时获取用户和订单数据
-                const [usersResponse, ordersResponse] = await Promise.all([
-                    fetch('http://localhost:5000/api/get-users'),
-                    fetch('http://localhost:5000/api/get-orders')
-                ]);
-
-                if (usersResponse.ok && ordersResponse.ok) {
-                    const result = await usersResponse.json();
-                    const ordersResult = await ordersResponse.json();
-
-                    // 更新本地数据
-                    const data = getData();
-                    data.users = result.users || {};
-                    data.orders = ordersResult.orders || [];
-
-                    // 更新当前用户
-                    currentUser = {
-                        phone: phone,
-                        orders: ordersResult.orders ? ordersResult.orders.filter(o => o && o.clientPhone === phone).map(o => o.id) : []
-                    };
-
-                    saveData(data);
-
-                    document.getElementById('client-form').reset();
-                    alert('资料提交成功！\n\n请支付材料费30元后点击下方按钮确认付款');
-
-                    showPage('page-pay');
-                    return;
-                }
+                document.getElementById('client-form').reset();
+                alert('资料提交成功！\n\n请支付材料费30元后点击下方按钮确认付款');
+                showPage('page-pay');
             } catch (e) {
                 console.log('从服务器获取数据失败:', e);
             }
-
-            // 服务器请求失败，回退到本地数据
-            const data = getData();
-            data.orders = data.orders || [];
-
-            const order = {
-                ...newOrder,
-                id: Date.now().toString()
-            };
-
-            data.orders.unshift(order);
-            saveData(data);
-
-            currentUser.orders = currentUser.orders || [];
-            currentUser.orders.unshift(order.id);
-            saveData(data);
-
-            document.getElementById('client-form').reset();
-            alert('资料提交成功！\n\n请支付材料费30元后点击下方按钮确认付款');
-
-            showPage('page-pay');
         }
 
         async function confirmPayment() {
-            // 验证用户是否已登录
             if (!currentUser || !currentUser.phone) {
                 alert('请先登录');
                 showPage('page-login');
                 return;
             }
 
-            const orderId = currentUser.orders && currentUser.orders[0];
-            if (!orderId) {
-                alert('未找到订单');
-                return;
-            }
-
-            // 先从服务器获取最新订单数据
             try {
-                // 同时获取用户和订单数据
-                const [usersResponse, ordersResponse] = await Promise.all([
-                    fetch('http://localhost:5000/api/get-users'),
-                    fetch('http://localhost:5000/api/get-orders')
-                ]);
+                const res = await fetch('/api/my-orders', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone: currentUser.phone})
+                });
+                const result = await res.json();
+                const orders = result.orders || [];
+                const order = orders[0];
 
-                if (usersResponse.ok && ordersResponse.ok) {
-                    const result = await usersResponse.json();
-                    const ordersResult = await ordersResponse.json();
-
-                    // 检查订单是否存在
-                    const order = ordersResult.orders && ordersResult.orders.find(o => o && o.id === orderId);
-                    if (!order) {
-                        alert('未找到订单');
-                        return;
-                    }
-
-                    // 检查订单是否已支付
-                    if (order.status === 'paid') {
-                        alert('该订单已经支付过了！');
-                        return;
-                    }
-
-                    // 更新订单状态为"支付中"
-                    order.status = 'paying';
-                    order.paidAt = new Date().toISOString();
-                    order.updatedAt = new Date().toISOString();
-
-                    // 同步到服务器
-                    try {
-                        await fetch('http://localhost:5000/api/save-order', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({order: order})
-                        });
-                    } catch (e) {
-                        console.log('同步订单状态到服务器失败:', e);
-                    }
-
-                    // 更新本地数据
-                    const data = getData();
-                    data.users = serverData.users || {};
-                    data.orders = serverData.orders || [];
-
-                    // 更新当前用户订单列表
-                    currentUser.orders = serverData.orders ? serverData.orders.filter(o => o && o.clientPhone === currentUser.phone).map(o => o.id) : [];
-
-                    saveData(data);
-
-                    alert('正在跳转到支付页面...\n\n请完成支付后等待自动跳转。');
-
-                    // 跳转到支付页面
-                    setTimeout(() => {
-                        window.location.href = 'pay_page.html';
-                    }, 1500);
-
+                if (!order) {
+                    alert('未找到订单');
                     return;
                 }
-            } catch (e) {
-                console.log('从服务器获取订单失败:', e);
-            }
 
-            // 服务器请求失败，回退到本地数据
-            const data = getData();
-            const order = data.orders.find(o => o && o.id === orderId);
+                if (order.status === 'paid') {
+                    alert('该订单已经支付过了！');
+                    return;
+                }
 
-            // 检查订单是否已支付
-            if (order && order.status === 'paid') {
-                alert('该订单已经支付过了！');
-                return;
-            }
-
-            if (order) {
                 order.status = 'paying';
                 order.paidAt = new Date().toISOString();
                 order.updatedAt = new Date().toISOString();
-                saveData(data);
 
-                // 同步到服务器
-                try {
-                    fetch('http://localhost:5000/api/save-order', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({order: order})
-                    });
-                } catch (e) {
-                    console.log('同步订单状态到服务器失败:', e);
-                }
+                await fetch('/api/save-order', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({order: order})
+                });
+
+                alert('正在跳转到支付页面...');
+                setTimeout(() => { window.location.href = 'pay_page.html'; }, 1500);
+            } catch (e) {
+                alert('操作失败: ' + e.message);
             }
-
-            alert('正在跳转到支付页面...\n\n请完成支付后等待自动跳转。');
-
-            // 跳转到支付页面
-            setTimeout(() => {
-                window.location.href = 'pay_page.html';
-            }, 1500);
         }
 
         async function renderOrders() {
-            const ordersList = document.getElementById('orders-list');
+            const ordersListEl = document.getElementById('orders-list');
 
-            // 验证用户是否已登录
             if (!currentUser || !currentUser.phone) {
-                ordersList.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">请先登录</p>';
+                ordersListEl.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">请先登录</p>';
                 return;
             }
 
-            const ordersListEl = ordersList;
-
-            // 先从服务器获取最新订单数据
             try {
-                // 同时获取用户和订单数据
-                const [usersResponse, ordersResponse] = await Promise.all([
-                    fetch('http://localhost:5000/api/get-users'),
-                    fetch('http://localhost:5000/api/get-orders')
-                ]);
+                const res = await fetch('/api/my-orders', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone: currentUser.phone})
+                });
+                const result = await res.json();
+                const orders = result.orders || [];
 
-                if (usersResponse.ok && ordersResponse.ok) {
-                    const result = await usersResponse.json();
-                    const ordersResult = await ordersResponse.json();
-
-                    const orders = ordersResult.orders ? ordersResult.orders.filter(o => o && o.clientPhone === currentUser.phone) : [];
-                    currentUser.orders = orders.map(o => o.id);
-
-                    saveData({
-                        users: result.users || {},
-                        orders: ordersResult.orders || []
-                    });
-
-                    if (orders.length === 0) {
-                        ordersListEl.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>';
-                        return;
-                    }
-
-                    let html = '';
-
-                    orders.forEach(order => {
-                        const statusMap = {
-                            'pending': '<span class="status-badge status-pending">待支付</span>',
-                            'paid': '<span class="status-badge status-paid">已支付</span>',
-                            'paying': '<span class="status-badge status-pending">支付中</span>',
-                            'confirmed': '<span class="status-badge status-confirmed">已确认</span>'
-                        };
-
-                        html += `
-                            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                    <span style="font-weight: 600; color: #1a202c;">订单号: ${order.id}</span>
-                                    ${statusMap[order.status]}
-                                </div>
-                                <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">姓名: ${order.clientName}</p>
-                                <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">手机: ${order.clientPhone}</p>
-                                <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">类型: ${order.type}</p>
-                                <p style="color: #718096; font-size: 13px;">创建时间: ${new Date(order.createdAt).toLocaleString('zh-CN')}</p>
-                                ${order.paidAt ? `<p style="color: #276749; font-size: 13px; margin-top: 8px;">支付时间: ${new Date(order.paidAt).toLocaleString('zh-CN')}</p>` : ''}
-                            </div>
-                        `;
-                    });
-
-                    ordersListEl.innerHTML = html;
+                if (orders.length === 0) {
+                    ordersListEl.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>';
                     return;
                 }
-            } catch (e) {
-                console.log('从服务器获取订单失败:', e);
-            }
 
-            // 服务器请求失败，回退到本地数据
-            const data = getData();
-            const orders = currentUser.orders || [];
-            const clientOrders = data.orders ? data.orders.filter(o => o && orders.includes(o.id)) : [];
-
-            if (clientOrders.length === 0) {
-                ordersListEl.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>';
-                return;
-            }
-
-            let html = '';
-
-            clientOrders.forEach(order => {
                 const statusMap = {
                     'pending': '<span class="status-badge status-pending">待支付</span>',
                     'paid': '<span class="status-badge status-paid">已支付</span>',
@@ -1455,22 +1219,26 @@
                     'confirmed': '<span class="status-badge status-confirmed">已确认</span>'
                 };
 
-                html += `
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <span style="font-weight: 600; color: #1a202c;">订单号: ${order.id}</span>
-                            ${statusMap[order.status]}
+                let html = '';
+                orders.forEach(order => {
+                    html += `
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <span style="font-weight: 600; color: #1a202c;">订单号: ${order.id}</span>
+                                ${statusMap[order.status] || ''}
+                            </div>
+                            <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">姓名: ${order.clientName}</p>
+                            <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">手机: ${order.clientPhone}</p>
+                            <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">类型: ${order.type}</p>
+                            <p style="color: #718096; font-size: 13px;">创建时间: ${new Date(order.createdAt).toLocaleString('zh-CN')}</p>
+                            ${order.paidAt ? `<p style="color: #276749; font-size: 13px; margin-top: 8px;">支付时间: ${new Date(order.paidAt).toLocaleString('zh-CN')}</p>` : ''}
                         </div>
-                        <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">姓名: ${order.clientName}</p>
-                        <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">手机: ${order.clientPhone}</p>
-                        <p style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">类型: ${order.type}</p>
-                        <p style="color: #718096; font-size: 13px;">创建时间: ${new Date(order.createdAt).toLocaleString('zh-CN')}</p>
-                        ${order.paidAt ? `<p style="color: #276749; font-size: 13px; margin-top: 8px;">支付时间: ${new Date(order.paidAt).toLocaleString('zh-CN')}</p>` : ''}
-                    </div>
-                `;
-            });
-
-            ordersListEl.innerHTML = html;
+                    `;
+                });
+                ordersListEl.innerHTML = html;
+            } catch (e) {
+                ordersListEl.innerHTML = '<p style="color: red; text-align: center; padding: 40px 0;">加载失败</p>';
+            }
         }
 
         function exportData() {
@@ -1512,7 +1280,7 @@ ${JSON.stringify(currentUser || {}, null, 2)}
         // 保存用户数据到服务器
         async function saveUserToServer(users) {
             try {
-                await fetch('http://localhost:5000/api/save-user', {
+                await fetch('/api/save-user', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
