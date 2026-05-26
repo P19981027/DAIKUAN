@@ -1,0 +1,7 @@
+app = "daikuan"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "5000"

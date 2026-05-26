@@ -1,0 +1,26 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Flyctl
+        run: |
+          curl -L https://fly.io/install.sh | sh
+
+      - name: Flyctl Login
+        env:
+          FLY_TOKEN: ${{ secrets.FLY_TOKEN }}
+        run: |
+          /home/runner/.local/bin/flyctl auth token $FLY_TOKEN
+
+      - name: Deploy
+        run: |
+          /home/runner/.local/bin/flyctl deploy
