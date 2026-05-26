@@ -11,16 +11,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Flyctl
-        run: |
-          curl -L https://fly.io/install.sh | sh
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Flyctl Login
         env:
           FLY_TOKEN: ${{ secrets.FLY_TOKEN }}
-        run: |
-          /home/runner/.local/bin/flyctl auth token $FLY_TOKEN
+        run: flyctl auth token $FLY_TOKEN
 
       - name: Deploy
-        run: |
-          /home/runner/.local/bin/flyctl deploy
+        run: flyctl deploy
