@@ -147,6 +147,72 @@ def login_user():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/delete-user', methods=['POST'])
+def delete_user():
+    auth = require_admin()
+    if auth:
+        return auth
+    try:
+        data = request.get_json()
+        phone = data.get('phone', '')
+        if not phone:
+            return jsonify({'error': '缺少手机号'}), 400
+
+        storage_file = _path('users_data.json')
+        if not os.path.exists(storage_file):
+            return jsonify({'error': '用户不存在'}), 404
+
+        with open(storage_file, 'r', encoding='utf-8') as f:
+            existing_data = json.load(f)
+
+        users = existing_data.get('users', {})
+        if phone not in users:
+            return jsonify({'error': '用户不存在'}), 404
+
+        del users[phone]
+        existing_data['users'] = users
+
+        with open(storage_file, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, ensure_ascii=False, indent=2)
+
+        return jsonify({'success': True, 'message': '用户已删除'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/delete-order', methods=['POST'])
+def delete_order():
+    auth = require_admin()
+    if auth:
+        return auth
+    try:
+        data = request.get_json()
+        order_id = data.get('id', '')
+        if not order_id:
+            return jsonify({'error': '缺少订单ID'}), 400
+
+        storage_file = _path('orders_data.json')
+        if not os.path.exists(storage_file):
+            return jsonify({'error': '订单不存在'}), 404
+
+        with open(storage_file, 'r', encoding='utf-8') as f:
+            existing_data = json.load(f)
+
+        if not isinstance(existing_data, list):
+            return jsonify({'error': '订单数据格式错误'}), 500
+
+        new_data = [o for o in existing_data if o.get('id') != order_id]
+        if len(new_data) == len(existing_data):
+            return jsonify({'error': '订单不存在'}), 404
+
+        with open(storage_file, 'w', encoding='utf-8') as f:
+            json.dump(new_data, f, ensure_ascii=False, indent=2)
+
+        return jsonify({'success': True, 'message': '订单已删除'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/get-users', methods=['GET'])
 def get_users():
     auth = require_admin()

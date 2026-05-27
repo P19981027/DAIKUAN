@@ -188,11 +188,11 @@ async function loadUsers() {
             c.innerHTML = '<p style="color:#718096;">暂无用户</p>';
             return;
         }
-        let html = '<table><thead><tr><th>序号</th><th>手机号</th><th>注册时间</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>序号</th><th>手机号</th><th>注册时间</th><th>操作</th></tr></thead><tbody>';
         keys.forEach((phone, i) => {
             const u = users[phone];
             const t = u.createdAt ? new Date(u.createdAt).toLocaleString('zh-CN') : '未知';
-            html += `<tr><td>${i+1}</td><td>${phone}</td><td>${t}</td></tr>`;
+            html += `<tr><td>${i+1}</td><td>${phone}</td><td>${t}</td><td><button class="btn btn-danger" style="padding:6px 15px;font-size:12px;" onclick="deleteUser('${phone}')">删除</button></td></tr>`;
         });
         html += '</tbody></table>';
         html += `<p style="margin-top:15px;color:#718096;">共 ${keys.length} 位用户</p>`;
@@ -224,11 +224,11 @@ async function loadOrders() {
                 : o.status === 'rejected'
                 ? '<span style="color:#e53e3e;font-weight:bold">审核未通过</span>'
                 : '<span style="color:#718096;">待支付</span>';
-            const action = o.status === 'paid'
+            const action = (o.status === 'paid'
                 ? `<button class="btn btn-danger" style="padding:6px 15px;font-size:12px;" onclick="markRejected('${o.id}')">审核未通过</button>`
                 : o.status !== 'paid' && o.status !== 'rejected'
                 ? `<button class="btn btn-primary" style="padding:6px 15px;font-size:12px;" onclick="markPaid('${o.id}')">确认已付</button>`
-                : '';
+                : '') + ` <button class="btn btn-secondary" style="padding:6px 15px;font-size:12px;" onclick="deleteOrder('${o.id}')">删除</button>`;
             html += `<tr><td>${(o.id||'').substring(0,8)}...</td><td>${o.clientName||'-'}</td><td>${o.clientPhone||'-'}</td><td>${o.bank||'-'}</td><td>${o.type||'-'}</td><td>${st}</td><td>${t}</td><td>${action}</td></tr>`;
         });
         html += '</tbody></table>';
@@ -260,6 +260,34 @@ async function markPaid(orderId) {
     } catch (e) {
         alert('操作失败: ' + e.message);
     }
+}
+
+async function deleteUser(phone) {
+    if (!confirm(`确定删除用户 ${phone} 吗？\n\n该操作不可恢复！`)) return;
+    try {
+        const res = await fetch('/api/delete-user', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({phone})
+        });
+        const data = await res.json();
+        if (data.success) { alert('用户已删除'); loadUsers(); }
+        else { alert('删除失败: ' + data.error); }
+    } catch (e) { alert('操作失败: ' + e.message); }
+}
+
+async function deleteOrder(orderId) {
+    if (!confirm('确定删除此订单吗？\n\n该操作不可恢复！')) return;
+    try {
+        const res = await fetch('/api/delete-order', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: orderId})
+        });
+        const data = await res.json();
+        if (data.success) { alert('订单已删除'); loadOrders(); }
+        else { alert('删除失败: ' + data.error); }
+    } catch (e) { alert('操作失败: ' + e.message); }
 }
 
 async function markRejected(orderId) {
