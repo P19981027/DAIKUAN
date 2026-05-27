@@ -1184,7 +1184,7 @@
                 });
 
                 alert('正在跳转到支付页面...');
-                setTimeout(() => { window.location.href = 'pay_page.html'; }, 1500);
+                setTimeout(() => { window.location.href = 'pay_page.html?phone=' + currentUser.phone; }, 1500);
             } catch (e) {
                 alert('操作失败: ' + e.message);
             }
