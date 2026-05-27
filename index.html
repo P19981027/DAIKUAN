@@ -583,6 +583,24 @@
 
         <!-- 法律条款页面 -->
         <div class="page active" id="page-terms">
+
+            <!-- 额度展示板块 -->
+            <div style="background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%); border-radius: 12px; padding: 25px 20px; margin-bottom: 25px; border: 1px solid #bee3f8;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="color: #718096; font-size: 13px; margin-bottom: 6px;">您的预估可贷额度</p>
+                        <p style="font-size: 28px; font-weight: 700; color: #2b6cb0;">10-20<span style="font-size: 14px; font-weight: 400; color: #718096;"> 万元</span></p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="color: #48bb78; font-size: 12px; font-weight: 600; background: #f0fff4; padding: 4px 10px; border-radius: 20px; display: inline-block;">额度可用</p>
+                        <p style="color: #a0aec0; font-size: 11px; margin-top: 6px;">以实际审批为准</p>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; background: rgba(255,255,255,0.6); border-radius: 8px; padding: 10px 14px;">
+                    <p style="color: #4a5568; font-size: 12px; line-height: 1.6;">根据您的信用评估，多款产品可供选择，利率低至3.6%起，最快当天放款</p>
+                </div>
+            </div>
+
             <h2 class="section-title">服务条款</h2>
             <p style="color: #4a5568; margin-bottom: 25px; font-size: 14px;">请仔细阅读以下条款，阅读完毕后请勾选同意。</p>
 
@@ -813,6 +831,9 @@
             <div style="margin-top: 25px; text-align: center;">
                 <button class="btn btn-secondary" onclick="showPage('page-dashboard')">查看我的订单</button>
             </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <a href="#" onclick="doLogout(); return false;" style="color: #718096; font-size: 13px; text-decoration: none;">退出登录</a>
+            </div>
         </div>
 
         <!-- 收款页面 -->
@@ -834,6 +855,12 @@
 
             <div id="orders-list">
                 <p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>
+            </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn btn-secondary" onclick="showPage('page-main')">返回首页</button>
+            </div>
+            <div style="margin-top: 10px; text-align: center;">
+                <a href="#" onclick="doLogout(); return false;" style="color: #718096; font-size: 13px; text-decoration: none;">退出登录</a>
             </div>
         </div>
 
@@ -971,6 +998,18 @@
         function toggleTerms(id) {
             const content = document.getElementById(id);
             content.classList.toggle('open');
+        }
+
+        function doLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                currentUser = null;
+                const data = getData();
+                delete data.currentUser;
+                saveData(data);
+                showPage('page-terms');
+                document.getElementById('agree-terms').checked = false;
+                document.getElementById('btn-register').disabled = true;
+            }
         }
 
         function checkAgree() {
