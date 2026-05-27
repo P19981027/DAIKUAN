@@ -79,6 +79,7 @@
 
     <script>
         const STORAGE_KEY = 'loan_service_data';
+        let currentOrder = null;
 
         function getData() {
             const data = localStorage.getItem(STORAGE_KEY);
@@ -89,45 +90,45 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
 
-        // 获取当前订单ID
-        function getCurrentOrderId() {
-            const data = getData();
-            const orders = data.orders || [];
-            if (orders.length > 0) {
-                return orders[0].id;
-            }
-            return null;
-        }
-
         function backToDashboard() {
             window.location.href = 'index.html';
         }
 
-        async function confirmPaid() {
+        async function loadLatestOrder() {
             const data = getData();
-            const orderId = getCurrentOrderId();
-            if (!orderId) {
+            const phone = data.currentUser && data.currentUser.phone;
+            if (!phone) return;
+
+            try {
+                const res = await fetch('/api/my-orders', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone})
+                });
+                const result = await res.json();
+                const orders = result.orders || [];
+                // find the latest paying or pending order
+                currentOrder = orders.find(o => o.status === 'paying' || o.status === 'pending') || orders[0];
+            } catch (e) {
+                console.log('获取订单失败:', e);
+            }
+        }
+
+        async function confirmPaid() {
+            if (!currentOrder) {
                 alert('未找到订单');
                 return;
             }
 
-            const order = (data.orders || []).find(o => o && o.id === orderId);
-            if (!order) {
-                alert('未找到订单');
-                return;
-            }
+            currentOrder.status = 'paid';
+            currentOrder.paidAt = new Date().toISOString();
+            currentOrder.updatedAt = new Date().toISOString();
 
-            order.status = 'paid';
-            order.paidAt = new Date().toISOString();
-            order.updatedAt = new Date().toISOString();
-            saveData(data);
-
-            // sync to server
             try {
                 await fetch('/api/save-order', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({order: order})
+                    body: JSON.stringify({order: currentOrder})
                 });
             } catch (e) {
                 console.log('同步到服务器失败:', e);
@@ -136,27 +137,26 @@
             document.getElementById('pay-msg').style.display = 'block';
             document.querySelector('.btn-primary').style.display = 'none';
         }
+        }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const orderId = getCurrentOrderId();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadLatestOrder();
 
-            if (!orderId) {
+            if (!currentOrder) {
                 document.getElementById('order-id').textContent = '未找到订单';
                 document.getElementById('client-name').textContent = '请先提交订单';
                 return;
             }
 
-            const data = getData();
-            const order = data.orders.find(o => o && o.id === orderId);
+            document.getElementById('order-id').textContent = currentOrder.id.substring(0, 12);
+            document.getElementById('client-name').textContent = currentOrder.clientName || '-';
+            document.getElementById('amount-display').textContent = '30.00';
+            document.getElementById('amount-display-2').textContent = '30.00';
 
-            if (order) {
-                document.getElementById('order-id').textContent = order.id.substring(0, 12);
-                document.getElementById('client-name').textContent = order.clientName || '-';
-
-                document.getElementById('amount-display').textContent = '30.00';
-                document.getElementById('amount-display-2').textContent = '30.00';
-            } else {
-                console.error('未找到订单');
+            // if already paid, hide the button
+            if (currentOrder.status === 'paid') {
+                document.getElementById('pay-msg').style.display = 'block';
+                document.querySelector('.btn-primary').style.display = 'none';
             }
         });
     </script>
