@@ -937,7 +937,12 @@
         function init() {
             initEmailJS();
 
-            // 默认显示条款页，用户需同意后注册或登录
+            // 恢复登录状态
+            const data = getData();
+            if (data.currentUser && data.currentUser.phone) {
+                currentUser = data.currentUser;
+                showPage('page-main');
+            }
         }
 
         // 从服务器加载用户数据到本地（仅恢复当前登录用户状态）
