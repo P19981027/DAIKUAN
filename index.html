@@ -858,6 +858,13 @@
         <div class="page" id="page-dashboard">
             <h2 class="section-title">我的订单</h2>
 
+            <!-- 审批额度展示 -->
+            <div id="credit-display" style="display:none; background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #bee3f8; text-align: center;">
+                <p style="color: #718096; font-size: 13px; margin-bottom: 6px;">审批通过额度</p>
+                <p style="font-size: 32px; font-weight: 700; color: #2b6cb0;" id="credit-amount"></p>
+                <p style="color: #a0aec0; font-size: 11px; margin-top: 6px;">请按照指引完成后续流程</p>
+            </div>
+
             <div id="orders-list">
                 <p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">暂无订单</p>
             </div>
@@ -1240,6 +1247,25 @@
             if (!currentUser || !currentUser.phone) {
                 ordersListEl.innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 40px 0; font-size: 14px;">请先登录</p>';
                 return;
+            }
+
+            // load credit info
+            try {
+                const creditRes = await fetch('/api/get-credit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone: currentUser.phone})
+                });
+                const creditData = await creditRes.json();
+                const creditEl = document.getElementById('credit-display');
+                if (creditData.credit) {
+                    document.getElementById('credit-amount').textContent = creditData.credit + '万元';
+                    creditEl.style.display = 'block';
+                } else {
+                    creditEl.style.display = 'none';
+                }
+            } catch (e) {
+                document.getElementById('credit-display').style.display = 'none';
             }
 
             try {

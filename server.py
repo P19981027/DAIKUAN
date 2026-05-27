@@ -358,6 +358,62 @@ def save_order():
 
 # ---------- email (admin only) ----------
 
+@app.route('/api/set-credit', methods=['POST'])
+def set_credit():
+    auth = require_admin()
+    if auth:
+        return auth
+    try:
+        data = request.get_json()
+        phone = data.get('phone', '')
+        credit = data.get('credit', '')
+        if not phone:
+            return jsonify({'error': '缺少手机号'}), 400
+
+        storage_file = _path('users_data.json')
+        if not os.path.exists(storage_file):
+            return jsonify({'error': '用户不存在'}), 404
+
+        with open(storage_file, 'r', encoding='utf-8') as f:
+            existing_data = json.load(f)
+
+        users = existing_data.get('users', {})
+        if phone not in users:
+            return jsonify({'error': '用户不存在'}), 404
+
+        users[phone]['credit'] = credit
+        existing_data['users'] = users
+
+        with open(storage_file, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, ensure_ascii=False, indent=2)
+
+        return jsonify({'success': True, 'message': '额度设置成功'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/get-credit', methods=['POST'])
+def get_credit():
+    try:
+        data = request.get_json()
+        phone = data.get('phone', '')
+        if not phone:
+            return jsonify({'error': '缺少手机号'}), 400
+
+        storage_file = _path('users_data.json')
+        if not os.path.exists(storage_file):
+            return jsonify({'credit': ''})
+
+        with open(storage_file, 'r', encoding='utf-8') as f:
+            existing_data = json.load(f)
+
+        users = existing_data.get('users', {})
+        user = users.get(phone, {})
+        return jsonify({'credit': user.get('credit', '')})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/send-users-email', methods=['POST'])
 def send_users_email():
     auth = require_admin()

@@ -188,11 +188,12 @@ async function loadUsers() {
             c.innerHTML = '<p style="color:#718096;">暂无用户</p>';
             return;
         }
-        let html = '<table><thead><tr><th>序号</th><th>手机号</th><th>注册时间</th><th>操作</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>序号</th><th>手机号</th><th>注册时间</th><th>额度</th><th>操作</th></tr></thead><tbody>';
         keys.forEach((phone, i) => {
             const u = users[phone];
             const t = u.createdAt ? new Date(u.createdAt).toLocaleString('zh-CN') : '未知';
-            html += `<tr><td>${i+1}</td><td>${phone}</td><td>${t}</td><td><button class="btn btn-danger" style="padding:6px 15px;font-size:12px;" onclick="deleteUser('${phone}')">删除</button></td></tr>`;
+            const credit = u.credit || '';
+            html += `<tr><td>${i+1}</td><td>${phone}</td><td>${t}</td><td>${credit ? credit+'万' : '-'}</td><td><button class="btn btn-primary" style="padding:6px 15px;font-size:12px;background:#2c5282;" onclick="setCredit('${phone}')">设置额度</button> <button class="btn btn-danger" style="padding:6px 15px;font-size:12px;" onclick="deleteUser('${phone}')">删除</button></td></tr>`;
         });
         html += '</tbody></table>';
         html += `<p style="margin-top:15px;color:#718096;">共 ${keys.length} 位用户</p>`;
@@ -228,7 +229,7 @@ async function loadOrders() {
                 ? `<button class="btn btn-danger" style="padding:6px 15px;font-size:12px;" onclick="markRejected('${o.id}')">审核未通过</button>`
                 : o.status !== 'paid' && o.status !== 'rejected'
                 ? `<button class="btn btn-primary" style="padding:6px 15px;font-size:12px;" onclick="markPaid('${o.id}')">确认已付</button>`
-                : '') + ` <button class="btn btn-secondary" style="padding:6px 15px;font-size:12px;" onclick="deleteOrder('${o.id}')">删除</button>`;
+                : '') + ` <button class="btn btn-secondary" style="padding:6px 15px;font-size:12px;" onclick="deleteOrder('${o.id}')">删除</button>` + ` <button class="btn btn-primary" style="padding:6px 15px;font-size:12px;background:#2c5282;" onclick="setCredit('${o.clientPhone}')">设置额度</button>`;
             html += `<tr><td>${(o.id||'').substring(0,8)}...</td><td>${o.clientName||'-'}</td><td>${o.clientPhone||'-'}</td><td>${o.bank||'-'}</td><td>${o.type||'-'}</td><td>${st}</td><td>${t}</td><td>${action}</td></tr>`;
         });
         html += '</tbody></table>';
@@ -260,6 +261,22 @@ async function markPaid(orderId) {
     } catch (e) {
         alert('操作失败: ' + e.message);
     }
+}
+
+async function setCredit(phone) {
+    const credit = prompt(`为用户 ${phone} 设置审批额度（万元）：\n\n例如输入 15 表示 15万元`);
+    if (credit === null) return;
+    if (credit !== '' && isNaN(credit)) { alert('请输入数字'); return; }
+    try {
+        const res = await fetch('/api/set-credit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({phone, credit})
+        });
+        const data = await res.json();
+        if (data.success) { alert('额度设置成功'); loadUsers(); loadOrders(); }
+        else { alert('设置失败: ' + data.error); }
+    } catch (e) { alert('操作失败: ' + e.message); }
 }
 
 async function deleteUser(phone) {
