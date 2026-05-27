@@ -11,35 +11,19 @@
         .header { text-align: center; margin-bottom: 30px; }
         .header h1 { font-size: 24px; color: #2b6cb0; }
         .header p { color: #718096; font-size: 14px; margin-top: 10px; }
-
-        .order-info {
-            background: #f7fafc;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-        }
-
+        .order-info { background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
         .order-item { margin-bottom: 15px; }
         .order-item label { display: block; color: #718096; font-size: 14px; margin-bottom: 5px; }
         .order-item .value { font-size: 18px; color: #2d3748; font-weight: 600; }
-
-        .payment-info {
-            background: #ebf8ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border-left: 4px solid #2b6cb0;
-        }
-
-        .payment-info .price { font-size: 28px; color: #2b6cb0; font-weight: bold; }
-        .payment-info .price span { font-size: 14px; }
-
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; font-weight: 600; transition: all 0.3s; }
         .btn-primary { background: #2b6cb0; color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .btn-primary:active { transform: translateY(0); }
-
+        .btn-wechat { background: #07c160; color: white; font-size: 18px; padding: 18px; }
+        .btn-primary:hover, .btn-wechat:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .back-link { color: #2b6cb0; cursor: pointer; text-decoration: underline; display: inline-block; margin-top: 15px; }
+        .qr-box { text-align: center; margin: 20px 0; }
+        .qr-box img { width: 220px; height: 220px; border: 3px solid #e2e8f0; border-radius: 8px; }
+        .tip-box { background: #fffaf0; border-left: 4px solid #ed8936; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .tip-box p { color: #744210; font-size: 13px; line-height: 1.8; }
     </style>
 </head>
 <body>
@@ -60,24 +44,37 @@
             </div>
             <div class="order-item">
                 <label>支付金额</label>
-                <div class="value">¥<span id="amount-display">30.00</span></div>
+                <div class="value" style="color: #2b6cb0;">¥30.00</div>
             </div>
         </div>
 
-        <div style="text-align: center; padding: 30px 0;">
-            <p style="color: #2d3748; font-size: 18px; font-weight: 600; margin-bottom: 20px;">支付金额：¥30.00</p>
-            <a href="https://payapp.wechatpay.cn/sjt/qr/AQkkE8L0jQHZEG3MfXqIAb-9" id="wechat-pay-btn" target="_blank" class="btn btn-primary" style="display: inline-block; width: 80%; text-decoration: none; font-size: 18px; padding: 18px;">
+        <!-- 微信内：直接跳转支付 -->
+        <div id="pay-in-wechat" style="display:none; text-align: center; padding: 20px 0;">
+            <a href="https://payapp.wechatpay.cn/sjt/qr/AQkkE8L0jQHZEG3MfXqIAb-9" class="btn btn-wechat" style="text-decoration:none; display:block;">
                 微信支付 ¥30.00
             </a>
-            <p style="color: #718096; margin-top: 15px; font-size: 13px;">点击上方按钮跳转到微信完成支付</p>
-            <p style="color: #718096; margin-top: 8px; font-size: 12px;">如无法跳转，请截图二维码后在微信中扫码支付</p>
-            <div style="margin-top: 15px;">
-                <button onclick="document.getElementById('qr-fallback').style.display='block'" style="background:none;border:none;color:#2b6cb0;cursor:pointer;font-size:13px;">显示收款二维码</button>
+            <p style="color: #718096; margin-top: 15px; font-size: 13px;">点击按钮直接完成支付</p>
+        </div>
+
+        <!-- 非微信：显示二维码扫码 + 引导打开微信 -->
+        <div id="pay-outside-wechat" style="display:none; text-align: center; padding: 10px 0;">
+            <p style="color: #2d3748; font-size: 16px; font-weight: 600; margin-bottom: 15px;">请使用微信扫描下方二维码支付</p>
+            <div class="qr-box">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQAAAADAX2ykAAADRUlEQVR4nO1cUW6cQAy1DVI/QeoBchS4WdUj9QbLUXKASvAZCeTq2TNstq0oSNFmKH6KELvzPiy89tjPQ1jpCAY5RCcK/jbkH+u/I/jbkOvxJ07oJ+b0Ne4G+7Ilyut1mfYfglyQX6nB7oimmrjHUjdWqje7s/XxWfYcgRxi00X57MHZzMR988Y0tJXS0JqTsY4Q7wu2fz/kyvypJr0hnG9wcjcu2aufZM8OyB7SO1ya3yB+sfV2r0jSjap+t8D+JHt2QPaQLsyv7XpvktT+hr6aaWhH4s6WGlynZ9gjwf/Q50OpbsoF1V8vCUjc8fy3IYXx6xSchmlhS9IorViHlxmxbJen2SPB//D4rdS9Sthwb43mjw4Esc658Irnvw0pjE+qOqde14F0nbJy9eju8O859asv8OBb0qr6xmJ1YXe890zeOD3JnkOQY3S6YvwqMjBSs+Xi8R616gsWvx7ckZ9P2B8t3iRxN7asaIMYqpX6wtSSDn1dqv0S/B35WSFjePwmLBApCajUcnb6GM9zG1Ji/LJ2itaIKpM26D5pUPRH7mRXokuzX4K/CUkNr8WvN0kz6feH0QLB03f+IUjwPzt+p6/KnS61R2j3yi5o2CiYqZlr6n60eTAc/tqGlMdv3iw1o35emPkFBbMNGUZCa4TuCXU2mqQi7T8Euaa+QdYQvRM0cs+kWbpK6lZp9kvwt6HmQb+YiLUOFDrvhLO6BceHf8+qP1OWmV3GWOP39ihhRvyekq84sGF7rZ/UwdGNVDqjyMIhjtAnz6xPkksbaySPjxtzs+7Opdkvwd+GevLN+nNOyGt9NaYjAL47h3/P93ubrANamL8pOiU7hAV9Ekjnn1uIlKXafwhyMT7lse86+vV0bXuyejmd4jfmR2d/f4Ee9+Sp9qkC99iTY75wRv/WqJv8MA7jjjEQpM6G+c1PT9JqB7NivnBW/5K7dj2GM7v03I2kbJNC+25gUEqzX4J/4P0FTmMEvFqWGl4/c2fq1h/8HZDgl/V8hhcoHRbJ0/omA6prG/KHv072e6ZUId8bXlc1MFVokrThjXH0v2flL14++6uhaHjvUauYGSa5MuL3hP7l+P8Mp/KXBH8Tsr383/F/AdvUES9PPKMuAAAAAElFTkSuQmCC" alt="微信收款码">
             </div>
-            <div id="qr-fallback" style="display:none;margin-top:15px;">
-                <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARweHigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKT/wAARCAIeAZADASIAAhEBAxEB/8QAGwABAAIDAQEAAAAAAAAAAAAAAAQFAQIDBgf/xABJEAABAwMCAgUIBgcGBQUBAAABAAIDBAUREiETMQYUIkFxFTIzUVNhcpEWVIGSwdEjQlKCobHhNDU2Q3OTJGKisvAlVWNk8aP/xAAZAQEBAQEBAQAAAAAAAAAAAAAAAQMCBQT/xAAmEQEBAAIBAwQDAAMBAAAAAAAAAQIRAxIxMxMUIUEEIlEjMmHR/9oADAMBAAIRAxEAPwDCIiyeOIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIt42GSRrG4y443Qk2wGPLS4NJaO/GywAXHABJ9QVvFSSNoJICW6nE49S5W6lcyokc/HY7Ix611pv6F3J/VcGOOcNO3PbktVdwU8jHzGR7XNk7h3KvqaF1PGXl7XDOMBLDPhuM2iLYseGhxaQ08jjZSoKmnjia19OHuHM7bqZx4ZadojhEuN+GMdlJDHixyndUtY55wxpcfUAsEYODzCs6aspeKRwmwnHnHHyXN9ZS63f8M12/PbdNF4sdb6les6XaQ7Bwe9Zxqfho3J2Cs5zHTwQ08nI7vx6v/wBUkcYYdW7VWASQAMkrLmuYcOaWn1EKxh8n8ZmgP1ZGM55rpWdS4/6cO14HLPJXpd+h8b2qFld6rq+W9XBx35ypzJur22KTQHHluppzjx7tlvZVIrejrOsylhia3AzsuD7mWvc3gs2JHNXTr0sdb6lcsgEnAGSrG5kPpoH4A1b7eC1o4200JqpfV2Apr5T0v26doABcQACSe4IQWkgggjuKtKdnEigmDAXmUlxA7t1iqh/QTuLMOdJ2TjfGyunXofG5Va5rm41NIzyyFqrmro+sOYBIG6G4xjKqnxlsxjadRBwMd6lmnHJxXCtdLtIdg6T3rABJwBkq1lbDFBHSyv0AjJK5xx0MUjXtqjlpzzV06vD891cQWnBBBHcVhWk7aGeUyOqME88FRKmOnZo4EuvJ39ymnOXFcftGWzWOecNaXH3BThS0P1r+IUiihpo5SYZtbscsq6dY8Ft+aqCCDg7ELCspKajMji6pwSTkZGy41EFKyIuin1vHIZCmnN4rENZc0t84EZ9a60sJnnawcuZ8FLrg+oqODC3VwxvhNJjhvHauWxY4NDi0gHkSF36jU+yPzCmVNPK+hhjazLm4yPVsmlx4srLuKpFs9jmPLHDDhzC1UZCIiAiIgIiICIiAiIgIiICyCQcg4WF0hk4UrXkagDy9aE7rClbJLbZGtJLyTjJUincwxPgBwWNw8+881y606W3yytGgjIGFytZDmVBeTg4yfmtH3zKSyT+O9FTxwucWTiTIwcdygVdPHEzUycSEnlnkp1C2kDn9Xc4nG+c8lBqm0gaOrucXZ3znkpezjk10M0tXw2CIQNkJO3rVjJNwGMHDZxX7BoKh0UlNCxrsF0zjjHqXSrgM9cQJAwtYCCUnZcLZh8Xbt/xH1WH739FpNJNFGXvpYg0c8OWIKNwkBfUl4/ZDj+a2q6eSd2DUMawcm/mq7u+nf/iLbREJHSyOwWkYHit7j/b4vs/moUYxM0f8w/mplzOK2M5x" alt="收款码" style="max-width: 200px; margin: 10px;">
+            <div class="tip-box">
+                <p>1. 长按上方二维码保存到手机</p>
+                <p>2. 打开微信 → 扫一扫 → 从相册选取二维码</p>
+                <p>3. 确认支付金额为 <strong>¥30.00</strong></p>
             </div>
-            <button class="btn btn-primary" onclick="confirmPaid()" style="margin-top: 25px; width: 80%;">我已完成支付</button>
+            <button class="btn btn-wechat" onclick="openWechat()" style="margin-top:10px;">
+                打开微信
+            </button>
+        </div>
+
+        <!-- 已完成支付按钮 -->
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="confirmPaid()" style="width: 80%;">我已完成支付</button>
             <p id="pay-msg" style="color: #48bb78; margin-top: 10px; display: none;">支付确认已提交，请等待审核</p>
         </div>
 
@@ -88,6 +85,7 @@
 
     <script>
         const STORAGE_KEY = 'loan_service_data';
+        const WECHAT_PAY_URL = 'https://payapp.wechatpay.cn/sjt/qr/AQkkE8L0jQHZEG3MfXqIAb-9';
         let currentOrder = null;
 
         function getData() {
@@ -103,11 +101,29 @@
             window.location.href = 'index.html';
         }
 
+        function isWechat() {
+            return /MicroMessenger/i.test(navigator.userAgent);
+        }
+
+        function openWechat() {
+            // try to open WeChat app on mobile
+            window.location.href = 'weixin://';
+            // fallback: copy the link
+            setTimeout(function() {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(WECHAT_PAY_URL).then(function() {
+                        alert('支付链接已复制，请打开微信粘贴到聊天框中打开');
+                    });
+                } else {
+                    prompt('请复制以下链接，在微信中打开：', WECHAT_PAY_URL);
+                }
+            }, 500);
+        }
+
         async function loadLatestOrder() {
             const data = getData();
             const phone = data.currentUser && data.currentUser.phone;
             if (!phone) return;
-
             try {
                 const res = await fetch('/api/my-orders', {
                     method: 'POST',
@@ -116,7 +132,6 @@
                 });
                 const result = await res.json();
                 const orders = result.orders || [];
-                // find the latest paying or pending order
                 currentOrder = orders.find(o => o.status === 'paying' || o.status === 'pending') || orders[0];
             } catch (e) {
                 console.log('获取订单失败:', e);
@@ -128,11 +143,9 @@
                 alert('未找到订单');
                 return;
             }
-
             currentOrder.status = 'paid';
             currentOrder.paidAt = new Date().toISOString();
             currentOrder.updatedAt = new Date().toISOString();
-
             try {
                 await fetch('/api/save-order', {
                     method: 'POST',
@@ -142,13 +155,19 @@
             } catch (e) {
                 console.log('同步到服务器失败:', e);
             }
-
             document.getElementById('pay-msg').style.display = 'block';
             document.querySelector('.btn-primary').style.display = 'none';
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // try localStorage first, then URL params
+            // detect environment and show corresponding UI
+            if (isWechat()) {
+                document.getElementById('pay-in-wechat').style.display = 'block';
+            } else {
+                document.getElementById('pay-outside-wechat').style.display = 'block';
+            }
+
+            // load order data
             const data = getData();
             const phone = data.currentUser && data.currentUser.phone;
 
@@ -156,7 +175,7 @@
                 await loadLatestOrder();
             }
 
-            // also try URL params as fallback (from index.html redirect)
+            // fallback: try URL params
             if (!currentOrder) {
                 const params = new URLSearchParams(window.location.search);
                 const urlPhone = params.get('phone');
@@ -184,8 +203,6 @@
 
             document.getElementById('order-id').textContent = currentOrder.id.substring(0, 12);
             document.getElementById('client-name').textContent = currentOrder.clientName || '-';
-            document.getElementById('amount-display').textContent = '30.00';
-            document.getElementById('amount-display-2').textContent = '30.00';
 
             if (currentOrder.status === 'paid') {
                 document.getElementById('pay-msg').style.display = 'block';
