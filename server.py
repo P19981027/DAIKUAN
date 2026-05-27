@@ -30,11 +30,18 @@ mail = Mail(app)
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin888')
 
 DATA_DIR = os.environ.get('DATA_DIR', '.')
-os.makedirs(DATA_DIR, exist_ok=True)
 
 
 def _path(filename):
-    return os.path.join(DATA_DIR, filename)
+    p = os.path.join(DATA_DIR, filename)
+    # if persistent dir is empty, seed from bundled defaults
+    if DATA_DIR != '.' and not os.path.exists(p):
+        default = os.path.join('.', filename)
+        if os.path.exists(default):
+            import shutil
+            os.makedirs(DATA_DIR, exist_ok=True)
+            shutil.copy2(default, p)
+    return p
 
 
 def _hash_password(pw):

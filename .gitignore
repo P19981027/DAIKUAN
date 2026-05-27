@@ -16,6 +16,4 @@ venv/
 *.swo
 *~
 .DS_Store
-users_data.json
-orders_data.json
 *.log
