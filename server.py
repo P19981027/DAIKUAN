@@ -30,6 +30,7 @@ mail = Mail(app)
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin888')
 
 DATA_DIR = os.environ.get('DATA_DIR', '.')
+os.makedirs(DATA_DIR, exist_ok=True)
 
 
 def _path(filename):
@@ -209,6 +210,47 @@ def delete_order():
             json.dump(new_data, f, ensure_ascii=False, indent=2)
 
         return jsonify({'success': True, 'message': '订单已删除'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/import-data', methods=['POST'])
+def import_data():
+    auth = require_admin()
+    if auth:
+        return auth
+    try:
+        data = request.get_json()
+
+        if 'users' in data:
+            storage_file = _path('users_data.json')
+            existing = {}
+            if os.path.exists(storage_file):
+                with open(storage_file, 'r', encoding='utf-8') as f:
+                    existing = json.load(f)
+            existing_users = existing.get('users', {})
+            for phone, user in data['users'].items():
+                existing_users[phone] = user
+            existing['users'] = existing_users
+            with open(storage_file, 'w', encoding='utf-8') as f:
+                json.dump(existing, f, ensure_ascii=False, indent=2)
+
+        if 'orders' in data:
+            storage_file = _path('orders_data.json')
+            existing = []
+            if os.path.exists(storage_file):
+                with open(storage_file, 'r', encoding='utf-8') as f:
+                    existing = json.load(f)
+            if not isinstance(existing, list):
+                existing = []
+            existing_ids = {o.get('id') for o in existing}
+            for order in data['orders']:
+                if order.get('id') not in existing_ids:
+                    existing.insert(0, order)
+            with open(storage_file, 'w', encoding='utf-8') as f:
+                json.dump(existing, f, ensure_ascii=False, indent=2)
+
+        return jsonify({'success': True, 'message': '数据导入成功'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
